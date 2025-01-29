@@ -4,8 +4,8 @@
 
 | Name        | CCID   | GitHub Username |
 | ----------- | ------ | --------------- |
-| [Jimi Lin ] | [jimi] | [  jimi-l ]     |
-| [Full Name] | [CCID] | [@username]     |
+| Jimi Lin  | jimi |   jimi-l      |
+| Mekha George | mekha | mekha03    |
 | [Full Name] | [CCID] | [@username]     |
 | [Full Name] | [CCID] | [@username]     |
 | [Full Name] | [CCID] | [@username]     |
