@@ -2,11 +2,11 @@
 
 ## Team Members
 
-| Name        | CCID   | GitHub Username |
-| ----------- | ------ | --------------- |
-| Jimi Lin  | jimi |   jimi-l      |
+| Name | CCID   | GitHub Username |
+|  | ------ | --------------- |
+| Jimi Lin | jimi |   jimi-l      |
 | Mekha George | mekha | mekha03    |
-| [Full Name] | [CCID] | [@username]     |
+| Songrao Fang | songrao | HiguchiGenmei     |
 | [Full Name] | [CCID] | [@username]     |
 | [Full Name] | [CCID] | [@username]     |
 | [Full Name] | [CCID] | [@username]     |
