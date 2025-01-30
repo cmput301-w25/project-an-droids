@@ -7,7 +7,7 @@
 | Jimi Lin  | jimi |   jimi-l      |
 | Mekha George | mekha | mekha03    |
 | Songrao Fang | songrao | HiguchiGenmei     |
-| [Full Name] | [CCID] | [@username]     |
+| Vaibhav Jain | vjain3 | vaibh123540     |
 | [Full Name] | [CCID] | [@username]     |
 | [Full Name] | [CCID] | [@username]     |
 
