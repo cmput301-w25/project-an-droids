@@ -8,7 +8,7 @@
 | Mekha George | mekha | mekha03    |
 | Songrao Fang | songrao | HiguchiGenmei     |
 | Vaibhav Jain | vjain3 | vaibh123540     |
-| [Full Name] | [CCID] | [@username]     |
+|Gurkaranvir Kaur|gurkara4 | gurkaranvirr    |
 | [Full Name] | [CCID] | [@username]     |
 
 ## Project Description
