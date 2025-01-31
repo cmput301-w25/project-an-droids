@@ -29,7 +29,7 @@
 
 ## Documentation
 
-- [Wiki Link]
+- [[Wiki Link]](https://github.com/cmput301-w25/project-an-droids/wiki/First-Meeting)
 - [[Scrum Board]](https://github.com/orgs/cmput301-w25/projects/52)
 - [UI Mockups]
 - [UML]
