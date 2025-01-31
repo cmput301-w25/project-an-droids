@@ -9,7 +9,7 @@
 | Songrao Fang | songrao | HiguchiGenmei     |
 | Vaibhav Jain | vjain3 | vaibh123540     |
 |Gurkaranvir Kaur|gurkara4 | gurkaranvirr    |
-| [Full Name] | [CCID] | [@username]     |
+| Divit Batra| dbatra | dbatra11     |
 
 ## Project Description
 
@@ -30,6 +30,6 @@
 ## Documentation
 
 - [Wiki Link]
-- [Scrum Board]
+- [[Scrum Board]](https://github.com/orgs/cmput301-w25/projects/52)
 - [UI Mockups]
 - [UML]
