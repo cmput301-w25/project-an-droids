@@ -21,6 +21,12 @@
 - [Feature 2]: Brief description
 - [Feature 3]: Brief description
 
+## Backlog
+
+See the Github project for a view of User Stories and the tasks associated with them. Issues marked with "story" tag have the requirements and acceptance criteria, while those marked as "task" reflect logical chunks of work that complete the user story. Tasks are linked to user stories,
+
+Feel free to log bugs with the "bug" tag and these will be picked up ASAP.
+
 ## Setup Instructions
 
 1. [Step 1]
