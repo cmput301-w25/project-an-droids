@@ -35,7 +35,7 @@ Feel free to log bugs with the "bug" tag and these will be picked up ASAP.
 
 ## Documentation
 
-- [[Wiki Link]]([https://github.com/cmput301-w25/project-an-droids/wiki/First-Meeting](https://github.com/cmput301-w25/project-an-droids/wiki))
+- [[Wiki Link]](https://github.com/cmput301-w25/project-an-droids/wiki)
 - [[Scrum Board]](https://github.com/orgs/cmput301-w25/projects/52)
 - [UI Mockups]
 - [UML]
