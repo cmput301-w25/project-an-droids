@@ -21,7 +21,14 @@ public class Mood {
      */
     public Mood(String emotionalState, String socialSituation) {
         this.timestamp = LocalDateTime.now(); // Automatically captures the current time
-        setEmotionalState(emotionalState); // Use setter for validation
+
+        // Convert String to Enum, then back to String to ensure valid input
+        if (isValidEmotion(emotionalState)) {
+            this.emotionalState = emotionalState.toUpperCase();
+        } else {
+            throw new IllegalArgumentException("Invalid emotional state: " + emotionalState);
+        }
+
         this.trigger = null; // Since trigger is optional, set it to null
         this.socialSituation = socialSituation;
     }
