@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">AN-Droids</string>
+
+    <string-array name="emotion_states">
+        <item>anger</item>
+        <item>confusion</item>
+        <item>disgust</item>
+        <item>fear</item>
+        <item>happiness</item>
+        <item>sadness</item>
+        <item>shame</item>
+        <item>surprise</item>
+    </string-array>
 </resources>
