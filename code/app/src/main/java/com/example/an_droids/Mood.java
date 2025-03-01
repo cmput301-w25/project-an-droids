@@ -21,7 +21,7 @@ public class Mood {
      */
     public Mood(String emotionalState, String socialSituation) {
         this.timestamp = LocalDateTime.now(); // Automatically captures the current time
-        this.emotionalState = emotionalState;
+        setEmotionalState(emotionalState); // Use setter for validation
         this.trigger = null; // Since trigger is optional, set it to null
         this.socialSituation = socialSituation;
     }
@@ -71,7 +71,13 @@ public class Mood {
      * @param emotionalState The new emotional state.
      */
     public void setEmotionalState(String emotionalState) {
-        this.emotionalState = emotionalState;
+        // validation that chosen state is a valid option
+        try {
+            Emotion.valueOf(emotionalState.toUpperCase()); // Check validity
+            this.emotionalState = emotionalState;
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid emotional state: " + emotionalState);
+        }
     }
 
     /**
