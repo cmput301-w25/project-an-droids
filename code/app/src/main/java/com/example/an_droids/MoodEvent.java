@@ -10,6 +10,7 @@ package com.example.an_droids;
 public class MoodEvent {
     private String moodText;
     private int moodColor; // Store color as an int
+    private int color;
 
     public MoodEvent(String moodText, int moodColor) {
         this.moodText = moodText;
@@ -31,5 +32,9 @@ public class MoodEvent {
     public void setMoodColor(int moodColor) {
         this.moodColor = moodColor;
     }
+    public void setColor(int color) {
+        this.color = color;
+    }
+
 }
 
