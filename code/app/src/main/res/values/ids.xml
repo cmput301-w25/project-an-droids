@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="moodTextView" type="id" />
+    <item name="moodTitle" type="id" />
     <item name="moodContainer" type="id" />
 </resources>
