@@ -1,5 +1,6 @@
 package com.example.an_droids;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -9,27 +10,57 @@ import java.time.LocalDateTime;
  * The emotional state is validated using predefined options (anger, confusion, etc.)
  * but is stored and accessed as a String.
  */
-public class Mood {
+public class Mood implements Serializable {
     private LocalDateTime timestamp;  // Stores the date and time of the mood event
     private String trigger;           // Optional: trigger for the emotion
     private String socialSituation;   // Stores the social situation (e.g. "alone", "with one other person")
-    private enum emotionalState {
-        ANGER,
-        CONFUSION,
-        DISGUST,
-        FEAR,
-        HAPPINESS,
-        SADNESS,
-        SHAME,
-        SURPRISE
+    public enum EmotionalState {
+        Anger("😠", "#FF6666"),
+        Confusion("😕", "#C19A6B"),
+        Disgust("🤢", "#90EE90"),
+        Fear("😨", "#D8BFD8"),
+        Happiness("😃", "#FFFF99"),
+        Sadness("😢", "#ADD8E6"),
+        Shame("😳", "#FFB6C1"),
+        Surprise("😲", "#FFD580");
+
+        private String emoji;
+        private String colorHex;
+
+        EmotionalState(String emoji, String colorHex) {
+            this.emoji = emoji;
+            this.colorHex = colorHex;
+        }
+
+        public String getEmoji() {
+            return emoji;
+        }
+
+        public String getColorHex() {
+            return colorHex;
+        }
     }
-    private emotionalState emotion;
+    private EmotionalState emotion;
 
     public Mood(LocalDateTime timestamp, String trigger, String socialSituation, String emotion) {
         this.timestamp = timestamp;
         this.trigger = trigger;
         this.socialSituation = socialSituation;
-        this.emotion = emotionalState.valueOf(emotion.toUpperCase());
+        this.emotion = EmotionalState.valueOf(emotion);
+    }
+
+    public Mood(String emotion) {
+        this.timestamp = LocalDateTime.now();;
+        this.trigger = null;
+        this.socialSituation = null;
+        this.emotion = EmotionalState.valueOf(emotion);
+    }
+
+    public Mood(String emotion, LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+        this.trigger = null;
+        this.socialSituation = null;
+        this.emotion = EmotionalState.valueOf(emotion);
     }
 
     public LocalDateTime getTimestamp() {
@@ -56,11 +87,19 @@ public class Mood {
         this.socialSituation = socialSituation;
     }
 
-    public emotionalState getEmotion() {
+    public EmotionalState getEmotion() {
         return emotion;
     }
 
-    public void setEmotion(emotionalState emotion) {
-        this.emotion = emotion;
+    public void setEmotion(String emotion) {
+        this.emotion = EmotionalState.valueOf(emotion);
+    }
+
+    public String getEmotionEmoji() {
+        return emotion.getEmoji();
+    }
+
+    public String getEmotionColorHex() {
+        return emotion.getColorHex();
     }
 }
