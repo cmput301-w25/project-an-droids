@@ -66,6 +66,11 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 Mood mood = moodAdapter.getItem(position);
+                EditMoodFragment fragment = new EditMoodFragment();
+                Bundle args = new Bundle();
+                args.putSerializable("mood", mood);
+                fragment.setArguments(args);
+                fragment.show(getSupportFragmentManager(), "Edit Mood");
                 new AlertDialog.Builder(MainActivity.this)
                         .setTitle("Delete Confirmation")
                         .setMessage("Are you sure you want to delete this mood?")

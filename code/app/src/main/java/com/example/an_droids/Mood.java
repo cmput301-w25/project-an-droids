@@ -13,7 +13,9 @@ import java.time.LocalDateTime;
 public class Mood implements Serializable {
     private LocalDateTime timestamp;  // Stores the date and time of the mood event
     private String trigger;           // Optional: trigger for the emotion
-    private String socialSituation;   // Stores the social situation (e.g. "alone", "with one other person")
+    private String socialSituation;// Stores the social situation (e.g. "alone", "with one other person")
+    private String reason;
+
     public enum EmotionalState {
         Anger("😠", "#FF6666"),
         Confusion("😕", "#C19A6B"),
@@ -63,6 +65,14 @@ public class Mood implements Serializable {
         this.emotion = EmotionalState.valueOf(emotion);
     }
 
+    public Mood(String emotion, String reason, String trigger, LocalDateTime timestamp) {
+        this.timestamp = (timestamp != null) ? timestamp : LocalDateTime.now();
+        this.emotion = EmotionalState.valueOf(emotion);
+        this.reason = reason;
+        this.trigger = trigger;
+        this.socialSituation = null;
+    }
+
     public LocalDateTime getTimestamp() {
         return timestamp;
     }
@@ -101,5 +111,12 @@ public class Mood implements Serializable {
 
     public String getEmotionColorHex() {
         return emotion.getColorHex();
+    }
+
+    public String getReason() {
+        return reason;
+    }
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 }
