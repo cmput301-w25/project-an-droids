@@ -1,11 +1,11 @@
+
 package com.example.an_droids;
 
 import android.app.AlertDialog;
-import android.app.DatePickerDialog;
 import android.app.Dialog;
-import android.app.TimePickerDialog;
 import android.content.Context;
 import android.os.Bundle;
+import android.text.InputFilter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -22,10 +22,11 @@ import java.time.format.DateTimeFormatter;
 
 public class EditMoodFragment extends DialogFragment {
 
-    private  MoodDialogListener listener;
+    private MoodDialogListener listener;
     private EditText dateEditText;
     private EditText timeEditText;
     private Spinner emotionSpinner;
+    private EditText reasonEditText;
     private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -35,9 +36,8 @@ public class EditMoodFragment extends DialogFragment {
 
         if (context instanceof MoodDialogListener) {
             listener = (MoodDialogListener) context;
-        }
-        else {
-            throw new RuntimeException((context + "must implement MoodDialogListener"));
+        } else {
+            throw new RuntimeException((context + " must implement MoodDialogListener"));
         }
     }
 
@@ -48,29 +48,23 @@ public class EditMoodFragment extends DialogFragment {
         emotionSpinner = view.findViewById(R.id.emotionSpinner);
         dateEditText = view.findViewById(R.id.dateEditText);
         timeEditText = view.findViewById(R.id.timeEditText);
-        dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        reasonEditText = view.findViewById(R.id.reasonEditText);
 
         Mood mood = (Mood) getArguments().getSerializable("mood");
 
-        LocalDateTime timestamp = mood.getTimestamp();
+        dateEditText.setText(mood.getTimestamp().toLocalDate().toString());
+        timeEditText.setText(mood.getTimestamp().toLocalTime().toString());
+        reasonEditText.setText(mood.getReason());
 
-        String dateString = timestamp.format(dateFormatter);
-        String timeString = timestamp.format(timeFormatter);
+        reasonEditText.setFilters(new InputFilter[] { new InputFilter.LengthFilter(20) });
 
-        dateEditText.setText(dateString);
-        timeEditText.setText(timeString);
 
         for (int i = 0; i < emotionSpinner.getAdapter().getCount(); i++) {
-            String item = (String) emotionSpinner.getAdapter().getItem(i);
-            if (item.equalsIgnoreCase(mood.getEmotion().toString())) {
+            if (emotionSpinner.getAdapter().getItem(i).toString().equalsIgnoreCase(mood.getEmotion().toString())) {
                 emotionSpinner.setSelection(i);
                 break;
             }
         }
-
-        dateEditText.setOnClickListener(v -> showDatePickerDialog(mood));
-        timeEditText.setOnClickListener(v -> showTimePickerDialog(mood));
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         return builder
@@ -78,57 +72,16 @@ public class EditMoodFragment extends DialogFragment {
                 .setTitle("Edit Mood")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Save", (dialog, which) -> {
-                    String selectedEmotion = emotionSpinner.getSelectedItem().toString();
-                    String selectedDate = dateEditText.getText().toString();
-                    String selectedTime = timeEditText.getText().toString();
-
-                    LocalDate date = LocalDate.parse(selectedDate, dateFormatter);
-                    LocalTime time = LocalTime.parse(selectedTime, timeFormatter);
-
-                    LocalDateTime finalDateTime = LocalDateTime.of(date, time);
-                    mood.setEmotion(selectedEmotion);
-                    mood.setTimestamp(finalDateTime);
+                    String reasonText = reasonEditText.getText().toString();
+                    if (reasonText.length() > 20 || reasonText.split("\\s+", -1).length > 3) {
+                        reasonEditText.setError("Reason must be max 20 characters or 3 words");
+                        return;
+                    }
+                    mood.setEmotion(emotionSpinner.getSelectedItem().toString());
+                    mood.setReason(reasonEditText.getText().toString());
                     listener.EditMood(mood);
                 })
                 .create();
     }
-
-    private void showDatePickerDialog(Mood mood) {
-        LocalDateTime timestamp = mood.getTimestamp();
-        LocalDate localDate = timestamp.toLocalDate();
-        int defaultYear = localDate.getYear();
-        int defaultMonth = localDate.getMonthValue() - 1;
-        int defaultDay = localDate.getDayOfMonth();
-
-        DatePickerDialog datePickerDialog = new DatePickerDialog(
-                requireContext(),
-                (view, year, month, dayOfMonth) -> {
-                    LocalDate pickedDate = LocalDate.of(year, month + 1, dayOfMonth);
-                    dateEditText.setText(pickedDate.format(dateFormatter));
-                },
-                defaultYear,
-                defaultMonth,
-                defaultDay
-        );
-        datePickerDialog.show();
-    }
-
-    private void showTimePickerDialog(Mood mood) {
-        LocalDateTime timestamp = mood.getTimestamp();
-        LocalTime localTime = timestamp.toLocalTime();
-        int defaultHour = localTime.getHour();
-        int defaultMinute = localTime.getMinute();
-
-        TimePickerDialog timePickerDialog = new TimePickerDialog(
-                requireContext(),
-                (view, hourOfDay, minute) -> {
-                    LocalTime pickedTime = LocalTime.of(hourOfDay, minute);
-                    timeEditText.setText(pickedTime.format(timeFormatter));
-                },
-                defaultHour,
-                defaultMinute,
-                true
-        );
-        timePickerDialog.show();
-    }
 }
+
