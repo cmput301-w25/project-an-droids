@@ -1,5 +1,7 @@
 package com.example.an_droids;
 
+import android.graphics.Bitmap;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -15,7 +17,7 @@ public class Mood implements Serializable {
     private String trigger;           // Optional: trigger for the emotion
     private String socialSituation;// Stores the social situation (e.g. "alone", "with one other person")
     private String reason;
-
+    private Bitmap image;
     public enum EmotionalState {
         Anger("😠", "#FF6666"),
         Confusion("😕", "#C19A6B"),
@@ -44,25 +46,13 @@ public class Mood implements Serializable {
     }
     private EmotionalState emotion;
 
-    public Mood(LocalDateTime timestamp, String trigger, String socialSituation, String emotion) {
-        this.timestamp = timestamp;
+    public Mood(String emotion, String reason, String trigger, LocalDateTime timestamp, Bitmap image) {
+        this.timestamp = (timestamp != null) ? timestamp : LocalDateTime.now();
+        this.emotion = EmotionalState.valueOf(emotion);
+        this.reason = reason;
         this.trigger = trigger;
-        this.socialSituation = socialSituation;
-        this.emotion = EmotionalState.valueOf(emotion);
-    }
-
-    public Mood(String emotion) {
-        this.timestamp = LocalDateTime.now();;
-        this.trigger = null;
         this.socialSituation = null;
-        this.emotion = EmotionalState.valueOf(emotion);
-    }
-
-    public Mood(String emotion, LocalDateTime timestamp) {
-        this.timestamp = timestamp;
-        this.trigger = null;
-        this.socialSituation = null;
-        this.emotion = EmotionalState.valueOf(emotion);
+        this.image = image;
     }
 
     public Mood(String emotion, String reason, String trigger, LocalDateTime timestamp) {
@@ -71,6 +61,7 @@ public class Mood implements Serializable {
         this.reason = reason;
         this.trigger = trigger;
         this.socialSituation = null;
+        this.image = null;
     }
 
     public LocalDateTime getTimestamp() {
@@ -118,5 +109,13 @@ public class Mood implements Serializable {
     }
     public void setReason(String reason) {
         this.reason = reason;
+    }
+
+    public Bitmap getImage() {
+        return image;
+    }
+
+    public void setImage(Bitmap image) {
+        this.image = image;
     }
 }

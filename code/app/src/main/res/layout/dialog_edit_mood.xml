@@ -1,88 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/constrained"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:padding="20dp"
+    android:background="@color/light_blue">
 
-    <TextView
-        android:id="@+id/emotionLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginLeft="32dp"
-        android:layout_marginTop="32dp"
-        android:text="Select Emotion:"
+    <EditText
+        android:id="@+id/dateEditText"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="28dp"
+        android:background="@drawable/edittext_background"
+        android:clickable="true"
+        android:focusable="false"
+        android:hint="Tap to select date"
+        android:padding="12dp"
+        android:textColor="@color/black"
         android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/dateLabel"
+        app:layout_constraintTop_toTopOf="@+id/dateLabel" />
 
     <Spinner
         android:id="@+id/emotionSpinner"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="5dp"
-        android:layout_marginTop="32dp"
+        android:layout_height="45dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/spinner_background"
         android:entries="@array/emotions_array"
+        android:padding="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toEndOf="@+id/emotionLabel"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="@+id/emotionLabel" />
 
     <TextView
         android:id="@+id/dateLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="36dp"
         android:text="Select Date:"
+        android:textColor="@color/white"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="@+id/emotionLabel"
         app:layout_constraintTop_toBottomOf="@+id/emotionLabel" />
 
     <EditText
-        android:id="@+id/dateEditText"
+        android:id="@+id/reasonEditText"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="21dp"
-        android:clickable="true"
-        android:focusable="false"
-        android:hint="Tap to select date"
-        android:padding="8dp"
+        android:layout_height="100dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/edittext_background"
+        android:gravity="top"
+        android:hint="Enter your reason"
+        android:padding="12dp"
+        android:textColor="@color/black"
+        android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/dateLabel"
-        app:layout_constraintTop_toTopOf="@+id/dateLabel" />
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/timeEditText" />
 
     <TextView
         android:id="@+id/timeLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:text="Select Time:"
+        android:textColor="@color/white"
         android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="@+id/dateEditText"
+        app:layout_constraintStart_toStartOf="@+id/dateLabel"
         app:layout_constraintTop_toBottomOf="@+id/dateEditText" />
+
+    <TextView
+        android:id="@+id/emotionLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="124dp"
+        android:text="Select Emotion:"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <EditText
         android:id="@+id/timeEditText"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/edittext_background"
         android:clickable="true"
         android:focusable="false"
         android:hint="Tap to select time"
-        android:padding="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/timeLabel"
-        app:layout_constraintTop_toBottomOf="@+id/timeLabel" />
-
-    <EditText
-        android:id="@+id/reasonEditText"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="192dp"
-        android:hint="Reason"
-        android:inputType="text"
+        android:padding="12dp"
+        android:textColor="@color/black"
+        android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/emotionSpinner" />
+        app:layout_constraintStart_toEndOf="@+id/timeLabel"
+        app:layout_constraintTop_toTopOf="@+id/timeLabel" />
 
+    <ImageView
+        android:id="@+id/uploadImage"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:background="@drawable/image_border"
+        android:contentDescription="Upload Image"
+        android:scaleType="centerCrop"
+        android:src="@android:drawable/ic_menu_camera"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.517"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

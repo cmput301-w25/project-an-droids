@@ -3,38 +3,48 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="20dp"
+    android:background="@color/light_blue">
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="Select an emotion:"
-        android:textSize="16sp"
+    <ImageView
+        android:id="@+id/uploadImage"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/image_border"
+        android:contentDescription="Upload Image"
+        android:scaleType="centerCrop"
+        android:src="@android:drawable/ic_menu_camera"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Spinner
         android:id="@+id/emotionSpinner"
-        android:layout_width="120dp"
-        android:layout_height="30dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="5dp"
+        android:layout_width="160dp"
+        android:layout_height="45dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/spinner_background"
         android:entries="@array/emotions_array"
-        app:layout_constraintStart_toEndOf="@+id/textView"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:padding="8dp"
+        android:textAlignment="center"
+        app:layout_constraintBottom_toBottomOf="@+id/uploadImage"
+        app:layout_constraintStart_toEndOf="@+id/uploadImage"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.493" />
 
     <EditText
         android:id="@+id/reasonEditText"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:hint="Reason"
-        android:inputType="text"
+        android:layout_height="55dp"
+        android:background="@drawable/edittext_background"
+        android:hint="Enter your reason"
+        android:padding="12dp"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        android:layout_marginTop="20dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/emotionSpinner"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/uploadImage" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
