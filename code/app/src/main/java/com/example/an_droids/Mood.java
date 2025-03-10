@@ -3,21 +3,23 @@ package com.example.an_droids;
 import android.graphics.Bitmap;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.UUID;
 
-/**
- * Represents a Mood event that captures a user's emotional state,
- * trigger and social situation.
- *
- * The emotional state is validated using predefined options (anger, confusion, etc.)
- * but is stored and accessed as a String.
- */
 public class Mood implements Serializable {
-    private LocalDateTime timestamp;  // Stores the date and time of the mood event
-    private String trigger;           // Optional: trigger for the emotion
-    private String socialSituation;// Stores the social situation (e.g. "alone", "with one other person")
+    private String id;
+    private Date timestamp;       // Use Date instead of LocalDateTime
+    private String trigger;
+    private String socialSituation;
     private String reason;
     private Bitmap image;
+    public static final String[] SOCIAL_SITUATIONS = {
+            "No Selection",
+            "Alone",
+            "With one other person",
+            "With two to several people",
+            "With a crowd"
+    };
     public enum EmotionalState {
         Anger("😠", "#FF6666"),
         Confusion("😕", "#C19A6B"),
@@ -27,55 +29,55 @@ public class Mood implements Serializable {
         Sadness("😢", "#ADD8E6"),
         Shame("😳", "#FFB6C1"),
         Surprise("😲", "#FFD580");
-
-        private String emoji;
-        private String colorHex;
+        private final String emoji;
+        private final String colorHex;
 
         EmotionalState(String emoji, String colorHex) {
             this.emoji = emoji;
             this.colorHex = colorHex;
         }
-
-        public String getEmoji() {
-            return emoji;
-        }
-
-        public String getColorHex() {
-            return colorHex;
-        }
+        public String getEmoji() { return emoji; }
+        public String getColorHex() { return colorHex; }
     }
+
     private EmotionalState emotion;
 
-    public Mood(String emotion, String reason, String trigger, LocalDateTime timestamp, Bitmap image) {
-        this.timestamp = (timestamp != null) ? timestamp : LocalDateTime.now();
+    public Mood() {}
+
+    // Constructors that accept a Date
+    public Mood(String emotion, String reason, String trigger, Date timestamp, Bitmap image, String socialSituation) {
+        this.id = UUID.randomUUID().toString();
+        // If timestamp is null, default to now
+        this.timestamp = (timestamp != null) ? timestamp : new Date();
         this.emotion = EmotionalState.valueOf(emotion);
         this.reason = reason;
         this.trigger = trigger;
-        this.socialSituation = null;
+        this.socialSituation = socialSituation;
         this.image = image;
     }
 
-    public Mood(String emotion, String reason, String trigger, LocalDateTime timestamp) {
-        this.timestamp = (timestamp != null) ? timestamp : LocalDateTime.now();
-        this.emotion = EmotionalState.valueOf(emotion);
-        this.reason = reason;
-        this.trigger = trigger;
-        this.socialSituation = null;
-        this.image = null;
+    public Mood(String emotion, String reason, String trigger, Date timestamp, String socialSituation) {
+        this(emotion, reason, trigger, timestamp, null, socialSituation);
     }
 
-    public LocalDateTime getTimestamp() {
+    // Getters/Setters
+    public String getId() {
+        return id;
+    }
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public Date getTimestamp() {
         return timestamp;
     }
-
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(Date timestamp) {
         this.timestamp = timestamp;
     }
 
     public String getTrigger() {
         return trigger;
     }
-
     public void setTrigger(String trigger) {
         this.trigger = trigger;
     }
@@ -83,7 +85,6 @@ public class Mood implements Serializable {
     public String getSocialSituation() {
         return socialSituation;
     }
-
     public void setSocialSituation(String socialSituation) {
         this.socialSituation = socialSituation;
     }
@@ -91,7 +92,6 @@ public class Mood implements Serializable {
     public EmotionalState getEmotion() {
         return emotion;
     }
-
     public void setEmotion(String emotion) {
         this.emotion = EmotionalState.valueOf(emotion);
     }
@@ -114,7 +114,6 @@ public class Mood implements Serializable {
     public Bitmap getImage() {
         return image;
     }
-
     public void setImage(Bitmap image) {
         this.image = image;
     }
