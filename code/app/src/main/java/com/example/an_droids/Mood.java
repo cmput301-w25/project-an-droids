@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Represents a Mood event that captures a user's emotional state,
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
  * but is stored and accessed as a String.
  */
 public class Mood implements Serializable {
+    private String id;
     private LocalDateTime timestamp;  // Stores the date and time of the mood event
     private String trigger;           // Optional: trigger for the emotion
     private String socialSituation;// Stores the social situation (e.g. "alone", "with one other person")
@@ -47,6 +49,7 @@ public class Mood implements Serializable {
     private EmotionalState emotion;
 
     public Mood(String emotion, String reason, String trigger, LocalDateTime timestamp, Bitmap image) {
+        this.id = UUID.randomUUID().toString();
         this.timestamp = (timestamp != null) ? timestamp : LocalDateTime.now();
         this.emotion = EmotionalState.valueOf(emotion);
         this.reason = reason;
@@ -56,6 +59,7 @@ public class Mood implements Serializable {
     }
 
     public Mood(String emotion, String reason, String trigger, LocalDateTime timestamp) {
+        this.id = UUID.randomUUID().toString();
         this.timestamp = (timestamp != null) ? timestamp : LocalDateTime.now();
         this.emotion = EmotionalState.valueOf(emotion);
         this.reason = reason;
@@ -82,6 +86,14 @@ public class Mood implements Serializable {
 
     public String getSocialSituation() {
         return socialSituation;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public void setSocialSituation(String socialSituation) {

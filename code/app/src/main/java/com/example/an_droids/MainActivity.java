@@ -11,24 +11,14 @@ import android.widget.ListView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
+import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements MoodDialogListener{
+public class MainActivity extends AppCompatActivity implements MoodDialogListener {
 
-    private ArrayList<Mood> dataList;
     private ListView moodList;
     private MoodArrayAdapter moodAdapter;
-
-    @Override
-    public void AddMood(Mood mood) {
-        dataList.add(mood);
-        moodAdapter.notifyDataSetChanged();
-    }
-
-    @Override
-    public void EditMood(Mood mood) {
-        moodAdapter.notifyDataSetChanged();
-    }
-
+    private ArrayList<Mood> dataList;    // local data to populate the ListView
+    private MoodProvider moodProvider;   // our Firebase provider for CRUD
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,56 +26,94 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         setContentView(R.layout.activity_main);
 
         dataList = new ArrayList<>();
+        moodProvider = new MoodProvider();
 
         moodList = findViewById(R.id.moodList);
         moodAdapter = new MoodArrayAdapter(this, dataList);
         moodList.setAdapter(moodAdapter);
 
+        loadMoodsFromFirebase();
+
         Button addButton = findViewById(R.id.addButton);
-        addButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new AddMoodFragment().show(getSupportFragmentManager(), "Add Mood");
-            }
+        addButton.setOnClickListener(v -> {
+            new AddMoodFragment().show(getSupportFragmentManager(), "Add Mood");
         });
 
-        moodList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Mood mood = dataList.get(position);
-                EditMoodFragment fragment = new EditMoodFragment();
-                Bundle args = new Bundle();
-                args.putSerializable("mood", mood);
-                fragment.setArguments(args);
+        moodList.setOnItemClickListener((parent, view, position, id) -> {
+            Mood mood = dataList.get(position);
+            EditMoodFragment fragment = new EditMoodFragment();
 
-                fragment.show(getSupportFragmentManager(), "Edit Mood");
-            }
+            Bundle args = new Bundle();
+            args.putSerializable("mood", mood);
+            fragment.setArguments(args);
+
+            fragment.show(getSupportFragmentManager(), "Edit Mood");
         });
 
-        moodList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                Mood mood = moodAdapter.getItem(position);
-                EditMoodFragment fragment = new EditMoodFragment();
-                Bundle args = new Bundle();
-                args.putSerializable("mood", mood);
-                fragment.setArguments(args);
-                fragment.show(getSupportFragmentManager(), "Edit Mood");
-                new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Delete Confirmation")
-                        .setMessage("Are you sure you want to delete this mood?")
-                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+        moodList.setOnItemLongClickListener((parent, view, position, id) -> {
+            Mood mood = moodAdapter.getItem(position);
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("Delete Confirmation")
+                    .setMessage("Are you sure you want to delete this mood?")
+                    .setPositiveButton("Yes", (dialogInterface, i) -> {
+                        // Delete from Firestore
+                        moodProvider.deleteMood(mood, new MoodProvider.OnMoodOperationListener() {
                             @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
+                            public void onSuccess() {
+                                // Remove from local list and refresh adapter
                                 dataList.remove(mood);
                                 moodAdapter.notifyDataSetChanged();
                             }
-                        })
-                        .setNegativeButton("No", null)
-                        .show();
-                return true;
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                // Handle error (e.g., show a toast)
+                            }
+                        });
+                    })
+                    .setNegativeButton("No", null)
+                    .show();
+            return true;
+        });
+    }
+
+    @Override
+    public void AddMood(Mood mood) {
+        moodProvider.addMood(mood, new MoodProvider.OnMoodOperationListener() {
+            @Override
+            public void onSuccess() {
+                dataList.add(mood);
+                moodAdapter.notifyDataSetChanged();
+            }
+            @Override
+            public void onFailure(Exception e) {
             }
         });
     }
 
+    @Override
+    public void EditMood(Mood mood) {
+        moodProvider.updateMood(mood, new MoodProvider.OnMoodOperationListener() {
+            @Override
+            public void onSuccess() {
+                moodAdapter.notifyDataSetChanged();
+            }
+            @Override
+            public void onFailure(Exception e) {
+            }
+        });
+    }
+    private void loadMoodsFromFirebase() {
+        moodProvider.getAllMoods(new MoodProvider.OnMoodsLoadedListener() {
+            @Override
+            public void onMoodsLoaded(List<Mood> moods) {
+                dataList.clear();
+                dataList.addAll(moods);
+                moodAdapter.notifyDataSetChanged();
+            }
+            @Override
+            public void onError(Exception e) {
+            }
+        });
+    }
 }
