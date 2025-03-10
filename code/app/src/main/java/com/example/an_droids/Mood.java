@@ -6,13 +6,6 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Represents a Mood event that captures a user's emotional state,
- * trigger and social situation.
- *
- * The emotional state is validated using predefined options (anger, confusion, etc.)
- * but is stored and accessed as a String.
- */
 public class Mood implements Serializable {
     private String id;
     private LocalDateTime timestamp;  // Stores the date and time of the mood event
@@ -86,14 +79,6 @@ public class Mood implements Serializable {
 
     public String getSocialSituation() {
         return socialSituation;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getId() {
-        return id;
     }
 
     public void setSocialSituation(String socialSituation) {
