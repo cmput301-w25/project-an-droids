@@ -33,6 +33,7 @@ public class EditMoodFragment extends DialogFragment {
     private EditText dateEditText;
     private EditText timeEditText;
     private Spinner emotionSpinner;
+    private Spinner socialSituationSpinner;
     private EditText reasonEditText;
     private ImageView selectImage;
     private Bitmap image;
@@ -58,6 +59,7 @@ public class EditMoodFragment extends DialogFragment {
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_mood, null);
         emotionSpinner = view.findViewById(R.id.emotionSpinner);
+        socialSituationSpinner = view.findViewById(R.id.socialSituationSpinner);
         dateEditText = view.findViewById(R.id.dateEditText);
         timeEditText = view.findViewById(R.id.timeEditText);
         reasonEditText = view.findViewById(R.id.reasonEditText);
@@ -86,6 +88,14 @@ public class EditMoodFragment extends DialogFragment {
             }
         }
 
+        for (int i = 0; i < socialSituationSpinner.getAdapter().getCount(); i++) {
+            String item = (String) socialSituationSpinner.getAdapter().getItem(i);
+            if (item.equalsIgnoreCase(mood.getSocialSituation())) {
+                socialSituationSpinner.setSelection(i);
+                break;
+            }
+        }
+
         dateEditText.setOnClickListener(v -> showDatePickerDialog(mood));
         timeEditText.setOnClickListener(v -> showTimePickerDialog(mood));
         selectImage.setOnClickListener(view1 -> showImagePickerDialog());
@@ -97,6 +107,7 @@ public class EditMoodFragment extends DialogFragment {
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Save", (dialog, which) -> {
                     String selectedEmotion = emotionSpinner.getSelectedItem().toString();
+                    String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
                     String selectedDate = dateEditText.getText().toString();
                     String selectedTime = timeEditText.getText().toString();
                     String reason = reasonEditText.getText().toString();
@@ -109,6 +120,7 @@ public class EditMoodFragment extends DialogFragment {
                     mood.setTimestamp(finalDateTime);
                     mood.setReason(reason);
                     mood.setImage(image);
+                    mood.setSocialSituation(selectedSocialSituation);
                     listener.EditMood(mood);
                 })
                 .create();

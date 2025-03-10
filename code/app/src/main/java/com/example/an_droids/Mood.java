@@ -16,6 +16,13 @@ public class Mood implements Serializable {
     private LocalDateTime timestamp;  // Stores the date and time of the mood event
     private String trigger;           // Optional: trigger for the emotion
     private String socialSituation;// Stores the social situation (e.g. "alone", "with one other person")
+    public static final String[] SOCIAL_SITUATIONS = {
+            "No Selection",
+            "Alone",
+            "With one other person",
+            "With two to several people",
+            "With a crowd"
+    };
     private String reason;
     private Bitmap image;
     public enum EmotionalState {
@@ -46,12 +53,12 @@ public class Mood implements Serializable {
     }
     private EmotionalState emotion;
 
-    public Mood(String emotion, String reason, String trigger, LocalDateTime timestamp, Bitmap image) {
+    public Mood(String emotion, String reason, String trigger, LocalDateTime timestamp, Bitmap image, String socialSituation) {
         this.timestamp = (timestamp != null) ? timestamp : LocalDateTime.now();
         this.emotion = EmotionalState.valueOf(emotion);
         this.reason = reason;
         this.trigger = trigger;
-        this.socialSituation = null;
+        this.socialSituation = socialSituation;
         this.image = image;
     }
 

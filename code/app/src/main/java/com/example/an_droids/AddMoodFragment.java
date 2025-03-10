@@ -26,6 +26,7 @@ public class AddMoodFragment extends DialogFragment {
 
     private MoodDialogListener listener;
     private Spinner emotionSpinner;
+    private Spinner socialSituationSpinner;
     private EditText reasonEditText;
     private ImageView selectImage;
     private Bitmap image;
@@ -50,6 +51,7 @@ public class AddMoodFragment extends DialogFragment {
         emotionSpinner = view.findViewById(R.id.emotionSpinner);
         reasonEditText = view.findViewById(R.id.reasonEditText);
         selectImage = view.findViewById(R.id.uploadImage);
+        socialSituationSpinner = view.findViewById(R.id.socialSituationSpinner);
 
         reasonEditText.setFilters(new InputFilter[] { new InputFilter.LengthFilter(20) });
         selectImage.setOnClickListener(view1 -> showImagePickerDialog());
@@ -62,11 +64,12 @@ public class AddMoodFragment extends DialogFragment {
                 .setPositiveButton("Add", (dialog, which) -> {
                     String selectedEmotion = emotionSpinner.getSelectedItem().toString();
                     String reasonText = reasonEditText.getText().toString();
+                    String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
                     if (reasonText.length() > 20 || reasonText.split("\\s+", -1).length > 3) {
                         reasonEditText.setError("Reason must be max 20 characters or 3 words");
                         return;
                     }
-                    listener.AddMood(new Mood(selectedEmotion, reasonText, null, null, image));
+                    listener.AddMood(new Mood(selectedEmotion, reasonText, null, null, image, selectedSocialSituation));
                 })
                 .create();
     }
