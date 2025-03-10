@@ -12,22 +12,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MoodProvider {
-
     private final CollectionReference moodsCollection;
-
     public MoodProvider() {
         moodsCollection = FirebaseFirestore.getInstance().collection("Moods");
     }
-
     public void getAllMoods(final OnMoodsLoadedListener callback) {
         moodsCollection.get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
                 List<Mood> moodList = new ArrayList<>();
                 for (DocumentSnapshot document : task.getResult()) {
-                    // Convert Firestore doc to a Mood object
                     Mood mood = document.toObject(Mood.class);
                     if (mood != null) {
-                        // Optionally set the ID from the doc ID
                         mood.setId(document.getId());
                         moodList.add(mood);
                     }
@@ -41,7 +36,6 @@ public class MoodProvider {
 
     public void addMood(Mood mood, final OnMoodOperationListener callback) {
         if (mood.getId() == null || mood.getId().isEmpty()) {
-            // Generate new ID if needed
             String newId = moodsCollection.document().getId();
             mood.setId(newId);
         }

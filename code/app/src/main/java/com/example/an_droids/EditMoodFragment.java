@@ -31,6 +31,7 @@ public class EditMoodFragment extends DialogFragment {
 
     private MoodDialogListener listener;
     private Spinner emotionSpinner;
+    private Spinner socialSituationSpinner;
     private EditText dateEditText;
     private EditText timeEditText;
     private EditText reasonEditText;
@@ -62,6 +63,7 @@ public class EditMoodFragment extends DialogFragment {
         View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_mood, null);
 
         emotionSpinner = view.findViewById(R.id.emotionSpinner);
+        socialSituationSpinner = view.findViewById(R.id.socialSituationSpinner);
         dateEditText   = view.findViewById(R.id.dateEditText);
         timeEditText   = view.findViewById(R.id.timeEditText);
         reasonEditText = view.findViewById(R.id.reasonEditText);
@@ -98,6 +100,13 @@ public class EditMoodFragment extends DialogFragment {
                 break;
             }
         }
+        for (int i = 0; i < socialSituationSpinner.getAdapter().getCount(); i++) {
+            String item = (String) socialSituationSpinner.getAdapter().getItem(i);
+            if (item.equalsIgnoreCase(mood.getSocialSituation())) {
+                socialSituationSpinner.setSelection(i);
+                break;
+            }
+        }
 
         // Show pickers when users tap on date/time fields
         dateEditText.setOnClickListener(v -> showDatePickerDialog());
@@ -113,6 +122,7 @@ public class EditMoodFragment extends DialogFragment {
                 .setPositiveButton("Save", (dialog, which) -> {
                     // User tapped "Save", so update the Mood with new data
                     String selectedEmotion = emotionSpinner.getSelectedItem().toString();
+                    String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
                     String reason = reasonEditText.getText().toString();
 
                     // We already updated `calendar` in the pickers, so just use it
@@ -122,6 +132,7 @@ public class EditMoodFragment extends DialogFragment {
                     mood.setTimestamp(newDate);
                     mood.setReason(reason);
                     mood.setImage(image);
+                    mood.setSocialSituation(selectedSocialSituation);
 
                     // Send the updated Mood back
                     listener.EditMood(mood);

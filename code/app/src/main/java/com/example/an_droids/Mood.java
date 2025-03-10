@@ -13,7 +13,13 @@ public class Mood implements Serializable {
     private String socialSituation;
     private String reason;
     private Bitmap image;
-
+    public static final String[] SOCIAL_SITUATIONS = {
+            "No Selection",
+            "Alone",
+            "With one other person",
+            "With two to several people",
+            "With a crowd"
+    };
     public enum EmotionalState {
         Anger("😠", "#FF6666"),
         Confusion("😕", "#C19A6B"),
@@ -23,7 +29,6 @@ public class Mood implements Serializable {
         Sadness("😢", "#ADD8E6"),
         Shame("😳", "#FFB6C1"),
         Surprise("😲", "#FFD580");
-
         private final String emoji;
         private final String colorHex;
 
@@ -37,23 +42,22 @@ public class Mood implements Serializable {
 
     private EmotionalState emotion;
 
-    // Firestore requires a no-arg constructor
     public Mood() {}
 
     // Constructors that accept a Date
-    public Mood(String emotion, String reason, String trigger, Date timestamp, Bitmap image) {
+    public Mood(String emotion, String reason, String trigger, Date timestamp, Bitmap image, String socialSituation) {
         this.id = UUID.randomUUID().toString();
         // If timestamp is null, default to now
         this.timestamp = (timestamp != null) ? timestamp : new Date();
         this.emotion = EmotionalState.valueOf(emotion);
         this.reason = reason;
         this.trigger = trigger;
-        this.socialSituation = null;
+        this.socialSituation = socialSituation;
         this.image = image;
     }
 
-    public Mood(String emotion, String reason, String trigger, Date timestamp) {
-        this(emotion, reason, trigger, timestamp, null);
+    public Mood(String emotion, String reason, String trigger, Date timestamp, String socialSituation) {
+        this(emotion, reason, trigger, timestamp, null, socialSituation);
     }
 
     // Getters/Setters
