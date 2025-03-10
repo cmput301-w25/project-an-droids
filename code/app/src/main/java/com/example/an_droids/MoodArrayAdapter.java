@@ -11,24 +11,26 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 public class MoodArrayAdapter extends ArrayAdapter<Mood> {
     private ArrayList<Mood> moods;
     private Context context;
 
-    public MoodArrayAdapter(Context context, ArrayList<Mood> moods){
+    public MoodArrayAdapter(Context context, ArrayList<Mood> moods) {
         super(context, 0, moods);
         this.moods = moods;
         this.context = context;
     }
 
     @NonNull
+    @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent){
         View view = convertView;
-        if (view == null){
+        if (view == null) {
             view = LayoutInflater.from(context).inflate(R.layout.layout_mood, parent, false);
         }
 
@@ -37,19 +39,18 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         TextView moodName = view.findViewById(R.id.moodTitle);
         TextView dateView = view.findViewById(R.id.dateAdded);
         TextView timeView = view.findViewById(R.id.timeAdded);
-
-        LocalDateTime timestamp = mood.getTimestamp();
-
+        Date timestamp = mood.getTimestamp();
         moodName.setText(mood.getEmotion().toString() + " " + mood.getEmotion().getEmoji());
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String dateString = timestamp.format(dateFormatter);
+        SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-        String timeString = timestamp.format(timeFormatter);
-
-        dateView.setText(dateString);
-        timeView.setText(timeString);
-
+        if (timestamp != null) {
+            dateView.setText(dateFormatter.format(timestamp));
+            timeView.setText(timeFormatter.format(timestamp));
+        } else {
+            dateView.setText("");
+            timeView.setText("");
+        }
         view.setBackgroundColor(Color.parseColor(mood.getEmotion().getColorHex()));
 
         return view;

@@ -11,4 +11,11 @@
         <item>shame</item>
         <item>surprise</item>
     </string-array>
+    <string-array name="social_situations">
+        <item>No Selection</item>
+        <item>Alone</item>
+        <item>With one other person</item>
+        <item>With two to several people</item>
+        <item>With a crowd</item>
+    </string-array>
 </resources>
