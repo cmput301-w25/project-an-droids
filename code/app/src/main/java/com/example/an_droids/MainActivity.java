@@ -12,15 +12,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * MainActivity demonstrates how to integrate Firebase CRUD operations
- * into your mood-tracking app via a MoodProvider. This example:
- *
- * - Shows how to fetch Mood data from Firestore on startup
- * - Allows adding/editing Moods through dialog fragments
- * - Deletes Moods via a long-click context menu
- */
 public class MainActivity extends AppCompatActivity implements MoodDialogListener {
 
     private ListView moodList;
@@ -32,27 +23,17 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        // Initialize local data list and provider
         dataList = new ArrayList<>();
         moodProvider = new MoodProvider();
-
-        // Set up ListView and Adapter
         moodList = findViewById(R.id.moodList);
         moodAdapter = new MoodArrayAdapter(this, dataList);
         moodList.setAdapter(moodAdapter);
-
-        // Load existing moods from Firestore
         loadMoodsFromFirebase();
-
-        // Handle "Add Mood" button
         Button addButton = findViewById(R.id.addButton);
         addButton.setOnClickListener(v -> {
-            // Show the AddMoodFragment dialog
             new AddMoodFragment().show(getSupportFragmentManager(), "Add Mood");
         });
 
-        // Short-click: Edit a Mood
         moodList.setOnItemClickListener((parent, view, position, id) -> {
             Mood mood = dataList.get(position);
             EditMoodFragment fragment = new EditMoodFragment();
@@ -91,45 +72,30 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
             return true;
         });
     }
-
-    /**
-     * Callback when a new Mood is created in AddMoodFragment.
-     */
     @Override
     public void AddMood(Mood mood) {
-        // Add new Mood to Firestore
         moodProvider.addMood(mood, new MoodProvider.OnMoodOperationListener() {
             @Override
             public void onSuccess() {
-                // Also add to local list so UI updates immediately
                 dataList.add(mood);
                 moodAdapter.notifyDataSetChanged();
             }
-
             @Override
             public void onFailure(Exception e) {
-                // Handle error (e.g., show a toast)
             }
         });
     }
-
-    /**
-     * Callback when an existing Mood is edited in EditMoodFragment.
-     */
     @Override
     public void EditMood(Mood mood) {
         // Update the existing Mood in Firestore
         moodProvider.updateMood(mood, new MoodProvider.OnMoodOperationListener() {
             @Override
             public void onSuccess() {
-                // If the reference is the same in dataList, local data is already updated;
-                // just refresh the adapter to reflect changes
                 moodAdapter.notifyDataSetChanged();
             }
 
             @Override
             public void onFailure(Exception e) {
-                // Handle error (e.g., show a toast)
             }
         });
     }
@@ -144,7 +110,6 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
 
             @Override
             public void onError(Exception e) {
-                // Handle error (e.g., log or display a message)
             }
         });
     }

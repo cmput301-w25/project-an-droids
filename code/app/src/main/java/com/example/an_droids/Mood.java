@@ -41,6 +41,8 @@ public class Mood implements Serializable {
     }
     private EmotionalState emotion;
 
+    public Mood(){}
+
     public Mood(String emotion, String reason, String trigger, LocalDateTime timestamp, Bitmap image) {
         this.id = UUID.randomUUID().toString();
         this.timestamp = (timestamp != null) ? timestamp : LocalDateTime.now();
@@ -75,6 +77,14 @@ public class Mood implements Serializable {
 
     public void setTrigger(String trigger) {
         this.trigger = trigger;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getSocialSituation() {

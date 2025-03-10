@@ -28,7 +28,6 @@ public class MoodProvider {
                             List<Mood> moodList = new ArrayList<>();
                             for (DocumentSnapshot document : task.getResult()) {
                                 Mood mood = document.toObject(Mood.class);
-                                // Ensure the ID in the object is set to the doc ID
                                 if (mood != null) {
                                     mood.setId(document.getId());
                                     moodList.add(mood);
