@@ -22,34 +22,37 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 public class EditMoodFragment extends DialogFragment {
 
-    private  MoodDialogListener listener;
+    private MoodDialogListener listener;
+    private Spinner emotionSpinner;
     private EditText dateEditText;
     private EditText timeEditText;
-    private Spinner emotionSpinner;
     private EditText reasonEditText;
     private ImageView selectImage;
+
     private Bitmap image;
-    private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-    private int REQUEST_IMAGE_GALLERY = 1;
-    private int REQUEST_IMAGE_CAMERA = 2;
+    private final SimpleDateFormat dateFormatter =
+            new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+    private final SimpleDateFormat timeFormatter =
+            new SimpleDateFormat("HH:mm", Locale.getDefault());
+    private final Calendar calendar = Calendar.getInstance();
+
+    private static final int REQUEST_IMAGE_GALLERY = 1;
+    private static final int REQUEST_IMAGE_CAMERA = 2;
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-
         if (context instanceof MoodDialogListener) {
             listener = (MoodDialogListener) context;
-        }
-        else {
-            throw new RuntimeException((context + "must implement MoodDialogListener"));
+        } else {
+            throw new RuntimeException(context + " must implement MoodDialogListener");
         }
     }
 
@@ -57,27 +60,37 @@ public class EditMoodFragment extends DialogFragment {
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_mood, null);
+
         emotionSpinner = view.findViewById(R.id.emotionSpinner);
-        dateEditText = view.findViewById(R.id.dateEditText);
-        timeEditText = view.findViewById(R.id.timeEditText);
+        dateEditText   = view.findViewById(R.id.dateEditText);
+        timeEditText   = view.findViewById(R.id.timeEditText);
         reasonEditText = view.findViewById(R.id.reasonEditText);
-        selectImage = view.findViewById(R.id.uploadImage);
-        dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        selectImage    = view.findViewById(R.id.uploadImage);
 
+        // Retrieve the Mood passed in arguments
         Mood mood = (Mood) getArguments().getSerializable("mood");
+        if (mood == null) {
+            throw new IllegalArgumentException("No Mood passed to EditMoodFragment");
+        }
 
-        LocalDateTime timestamp = mood.getTimestamp();
+        // Initialize the Calendar with the Mood's timestamp
+        Date timestamp = mood.getTimestamp();
+        if (timestamp != null) {
+            calendar.setTime(timestamp);
+        }
 
-        String dateString = timestamp.format(dateFormatter);
-        String timeString = timestamp.format(timeFormatter);
-
-        dateEditText.setText(dateString);
-        timeEditText.setText(timeString);
+        // Show the date/time in the EditTexts
+        dateEditText.setText(dateFormatter.format(calendar.getTime()));
+        timeEditText.setText(timeFormatter.format(calendar.getTime()));
         reasonEditText.setText(mood.getReason());
-        if (mood.getImage() != null) selectImage.setImageBitmap(mood.getImage());
 
+        // If there's an existing image, display it
+        if (mood.getImage() != null) {
+            image = mood.getImage();
+            selectImage.setImageBitmap(image);
+        }
 
+        // Set the spinner selection to match the current emotion
         for (int i = 0; i < emotionSpinner.getAdapter().getCount(); i++) {
             String item = (String) emotionSpinner.getAdapter().getItem(i);
             if (item.equalsIgnoreCase(mood.getEmotion().toString())) {
@@ -86,46 +99,52 @@ public class EditMoodFragment extends DialogFragment {
             }
         }
 
-        dateEditText.setOnClickListener(v -> showDatePickerDialog(mood));
-        timeEditText.setOnClickListener(v -> showTimePickerDialog(mood));
-        selectImage.setOnClickListener(view1 -> showImagePickerDialog());
+        // Show pickers when users tap on date/time fields
+        dateEditText.setOnClickListener(v -> showDatePickerDialog());
+        timeEditText.setOnClickListener(v -> showTimePickerDialog());
+        selectImage.setOnClickListener(v -> showImagePickerDialog());
 
+        // Build the AlertDialog
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         return builder
                 .setView(view)
                 .setTitle("Edit Mood")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Save", (dialog, which) -> {
+                    // User tapped "Save", so update the Mood with new data
                     String selectedEmotion = emotionSpinner.getSelectedItem().toString();
-                    String selectedDate = dateEditText.getText().toString();
-                    String selectedTime = timeEditText.getText().toString();
                     String reason = reasonEditText.getText().toString();
 
-                    LocalDate date = LocalDate.parse(selectedDate, dateFormatter);
-                    LocalTime time = LocalTime.parse(selectedTime, timeFormatter);
+                    // We already updated `calendar` in the pickers, so just use it
+                    Date newDate = calendar.getTime();
 
-                    LocalDateTime finalDateTime = LocalDateTime.of(date, time);
                     mood.setEmotion(selectedEmotion);
-                    mood.setTimestamp(finalDateTime);
+                    mood.setTimestamp(newDate);
                     mood.setReason(reason);
                     mood.setImage(image);
+
+                    // Send the updated Mood back
                     listener.EditMood(mood);
                 })
                 .create();
     }
 
-    private void showDatePickerDialog(Mood mood) {
-        LocalDateTime timestamp = mood.getTimestamp();
-        LocalDate localDate = timestamp.toLocalDate();
-        int defaultYear = localDate.getYear();
-        int defaultMonth = localDate.getMonthValue() - 1;
-        int defaultDay = localDate.getDayOfMonth();
+    private void showDatePickerDialog() {
+        // Use the Calendar to provide current date in the picker
+        int defaultYear  = calendar.get(Calendar.YEAR);
+        int defaultMonth = calendar.get(Calendar.MONTH);
+        int defaultDay   = calendar.get(Calendar.DAY_OF_MONTH);
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 requireContext(),
                 (view, year, month, dayOfMonth) -> {
-                    LocalDate pickedDate = LocalDate.of(year, month + 1, dayOfMonth);
-                    dateEditText.setText(pickedDate.format(dateFormatter));
+                    // Update the Calendar with the chosen date
+                    calendar.set(Calendar.YEAR, year);
+                    calendar.set(Calendar.MONTH, month);
+                    calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+
+                    // Update the date EditText
+                    dateEditText.setText(dateFormatter.format(calendar.getTime()));
                 },
                 defaultYear,
                 defaultMonth,
@@ -134,17 +153,20 @@ public class EditMoodFragment extends DialogFragment {
         datePickerDialog.show();
     }
 
-    private void showTimePickerDialog(Mood mood) {
-        LocalDateTime timestamp = mood.getTimestamp();
-        LocalTime localTime = timestamp.toLocalTime();
-        int defaultHour = localTime.getHour();
-        int defaultMinute = localTime.getMinute();
+    private void showTimePickerDialog() {
+        // Use the Calendar to provide current time in the picker
+        int defaultHour   = calendar.get(Calendar.HOUR_OF_DAY);
+        int defaultMinute = calendar.get(Calendar.MINUTE);
 
         TimePickerDialog timePickerDialog = new TimePickerDialog(
                 requireContext(),
                 (view, hourOfDay, minute) -> {
-                    LocalTime pickedTime = LocalTime.of(hourOfDay, minute);
-                    timeEditText.setText(pickedTime.format(timeFormatter));
+                    // Update the Calendar with the chosen time
+                    calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                    calendar.set(Calendar.MINUTE, minute);
+
+                    // Update the time EditText
+                    timeEditText.setText(timeFormatter.format(calendar.getTime()));
                 },
                 defaultHour,
                 defaultMinute,
@@ -152,18 +174,20 @@ public class EditMoodFragment extends DialogFragment {
         );
         timePickerDialog.show();
     }
+
     private void showImagePickerDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Select Image")
-                .setItems(new CharSequence[]{"Choose from Gallery", "Take a Picture", "Go back"}, (dialog, which) -> {
-                    if (which == 0) {
-                        pickImageFromGallery();
-                    } else if (which == 1) {
-                        captureImageFromCamera();
-                    } else if (which == 2) {
-                        return;
-                    }
-                })
+                .setItems(new CharSequence[]{"Choose from Gallery", "Take a Picture", "Cancel"},
+                        (dialog, which) -> {
+                            if (which == 0) {
+                                pickImageFromGallery();
+                            } else if (which == 1) {
+                                captureImageFromCamera();
+                            } else {
+                                dialog.dismiss();
+                            }
+                        })
                 .show();
     }
 
@@ -184,7 +208,10 @@ public class EditMoodFragment extends DialogFragment {
             if (requestCode == REQUEST_IMAGE_GALLERY) {
                 Uri imageUri = data.getData();
                 try {
-                    image = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), imageUri);
+                    image = MediaStore.Images.Media.getBitmap(
+                            requireActivity().getContentResolver(),
+                            imageUri
+                    );
                     selectImage.setImageBitmap(image);
                 } catch (IOException e) {
                     e.printStackTrace();

@@ -3,16 +3,17 @@ package com.example.an_droids;
 import android.graphics.Bitmap;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 public class Mood implements Serializable {
     private String id;
-    private LocalDateTime timestamp;  // Stores the date and time of the mood event
-    private String trigger;           // Optional: trigger for the emotion
-    private String socialSituation;// Stores the social situation (e.g. "alone", "with one other person")
+    private Date timestamp;       // Use Date instead of LocalDateTime
+    private String trigger;
+    private String socialSituation;
     private String reason;
     private Bitmap image;
+
     public enum EmotionalState {
         Anger("😠", "#FF6666"),
         Confusion("😕", "#C19A6B"),
@@ -23,29 +24,27 @@ public class Mood implements Serializable {
         Shame("😳", "#FFB6C1"),
         Surprise("😲", "#FFD580");
 
-        private String emoji;
-        private String colorHex;
+        private final String emoji;
+        private final String colorHex;
 
         EmotionalState(String emoji, String colorHex) {
             this.emoji = emoji;
             this.colorHex = colorHex;
         }
-
-        public String getEmoji() {
-            return emoji;
-        }
-
-        public String getColorHex() {
-            return colorHex;
-        }
+        public String getEmoji() { return emoji; }
+        public String getColorHex() { return colorHex; }
     }
+
     private EmotionalState emotion;
 
-    public Mood(){}
+    // Firestore requires a no-arg constructor
+    public Mood() {}
 
-    public Mood(String emotion, String reason, String trigger, LocalDateTime timestamp, Bitmap image) {
+    // Constructors that accept a Date
+    public Mood(String emotion, String reason, String trigger, Date timestamp, Bitmap image) {
         this.id = UUID.randomUUID().toString();
-        this.timestamp = (timestamp != null) ? timestamp : LocalDateTime.now();
+        // If timestamp is null, default to now
+        this.timestamp = (timestamp != null) ? timestamp : new Date();
         this.emotion = EmotionalState.valueOf(emotion);
         this.reason = reason;
         this.trigger = trigger;
@@ -53,44 +52,35 @@ public class Mood implements Serializable {
         this.image = image;
     }
 
-    public Mood(String emotion, String reason, String trigger, LocalDateTime timestamp) {
-        this.id = UUID.randomUUID().toString();
-        this.timestamp = (timestamp != null) ? timestamp : LocalDateTime.now();
-        this.emotion = EmotionalState.valueOf(emotion);
-        this.reason = reason;
-        this.trigger = trigger;
-        this.socialSituation = null;
-        this.image = null;
+    public Mood(String emotion, String reason, String trigger, Date timestamp) {
+        this(emotion, reason, trigger, timestamp, null);
     }
 
-    public LocalDateTime getTimestamp() {
+    // Getters/Setters
+    public String getId() {
+        return id;
+    }
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public Date getTimestamp() {
         return timestamp;
     }
-
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(Date timestamp) {
         this.timestamp = timestamp;
     }
 
     public String getTrigger() {
         return trigger;
     }
-
     public void setTrigger(String trigger) {
         this.trigger = trigger;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public String getSocialSituation() {
         return socialSituation;
     }
-
     public void setSocialSituation(String socialSituation) {
         this.socialSituation = socialSituation;
     }
@@ -98,7 +88,6 @@ public class Mood implements Serializable {
     public EmotionalState getEmotion() {
         return emotion;
     }
-
     public void setEmotion(String emotion) {
         this.emotion = EmotionalState.valueOf(emotion);
     }
@@ -121,7 +110,6 @@ public class Mood implements Serializable {
     public Bitmap getImage() {
         return image;
     }
-
     public void setImage(Bitmap image) {
         this.image = image;
     }

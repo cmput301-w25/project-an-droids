@@ -20,25 +20,23 @@ public class MoodProvider {
     }
 
     public void getAllMoods(final OnMoodsLoadedListener callback) {
-        moodsCollection.get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful() && task.getResult() != null) {
-                            List<Mood> moodList = new ArrayList<>();
-                            for (DocumentSnapshot document : task.getResult()) {
-                                Mood mood = document.toObject(Mood.class);
-                                if (mood != null) {
-                                    mood.setId(document.getId());
-                                    moodList.add(mood);
-                                }
-                            }
-                            callback.onMoodsLoaded(moodList);
-                        } else {
-                            callback.onError(task.getException());
-                        }
+        moodsCollection.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                List<Mood> moodList = new ArrayList<>();
+                for (DocumentSnapshot document : task.getResult()) {
+                    // Convert Firestore doc to a Mood object
+                    Mood mood = document.toObject(Mood.class);
+                    if (mood != null) {
+                        // Optionally set the ID from the doc ID
+                        mood.setId(document.getId());
+                        moodList.add(mood);
                     }
-                });
+                }
+                callback.onMoodsLoaded(moodList);
+            } else {
+                callback.onError(task.getException());
+            }
+        });
     }
 
     public void addMood(Mood mood, final OnMoodOperationListener callback) {
