@@ -15,11 +15,9 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
-
 import java.io.IOException;
 
 public class AddMoodFragment extends DialogFragment {
@@ -36,11 +34,10 @@ public class AddMoodFragment extends DialogFragment {
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-
         if (context instanceof MoodDialogListener) {
             listener = (MoodDialogListener) context;
         } else {
-            throw new RuntimeException((context + " must implement MoodDialogListener"));
+            throw new RuntimeException(context + " must implement MoodDialogListener");
         }
     }
 
@@ -53,19 +50,22 @@ public class AddMoodFragment extends DialogFragment {
         selectImage = view.findViewById(R.id.uploadImage);
         socialSituationSpinner = view.findViewById(R.id.socialSituationSpinner);
 
-        reasonEditText.setFilters(new InputFilter[] { new InputFilter.LengthFilter(20) });
+        reasonEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(20)});
         selectImage.setOnClickListener(view1 -> showImagePickerDialog());
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        return builder
-                .setView(view)
+        return builder.setView(view)
                 .setTitle("Add a Mood")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Add", (dialog, which) -> {
                     String selectedEmotion = emotionSpinner.getSelectedItem().toString();
-                    String reasonText = reasonEditText.getText().toString();
+                    String reasonText = reasonEditText.getText().toString().trim();
                     String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
-                    if (reasonText.length() > 20 || reasonText.split("\\s+", -1).length > 3) {
+                    if (reasonText.isEmpty()) {
+                        reasonEditText.setError("Reason cannot be empty");
+                        return;
+                    }
+                    if (reasonText.length() > 20 || reasonText.split("\\s+").length > 3) {
                         reasonEditText.setError("Reason must be max 20 characters or 3 words");
                         return;
                     }
@@ -82,8 +82,6 @@ public class AddMoodFragment extends DialogFragment {
                         pickImageFromGallery();
                     } else if (which == 1) {
                         captureImageFromCamera();
-                    } else if (which == 2) {
-                        return;
                     }
                 })
                 .show();

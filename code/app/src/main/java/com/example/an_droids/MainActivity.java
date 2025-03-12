@@ -1,116 +1,84 @@
 package com.example.an_droids;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.AdapterView;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.ListView;
+import android.app.AlertDialog;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
-import java.util.List;
-public class MainActivity extends AppCompatActivity implements MoodDialogListener {
 
-    private ListView moodList;
-    private MoodArrayAdapter moodAdapter;
-    private ArrayList<Mood> dataList;    // local data to populate the ListView
-    private MoodProvider moodProvider;   // our Firebase provider for CRUD
+public class MainActivity extends AppCompatActivity implements MoodDialogListener {
+    private Button addMoodButton;
+    private ListView moodListView;
+    private MoodProvider moodProvider;
+    private ArrayList<Mood> moodArrayList;
+    private MoodArrayAdapter moodArrayAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        dataList = new ArrayList<>();
-        moodProvider = new MoodProvider();
-        moodList = findViewById(R.id.moodList);
-        moodAdapter = new MoodArrayAdapter(this, dataList);
-        moodList.setAdapter(moodAdapter);
-        loadMoodsFromFirebase();
-        Button addButton = findViewById(R.id.addButton);
-        addButton.setOnClickListener(v -> {
-            new AddMoodFragment().show(getSupportFragmentManager(), "Add Mood");
+
+        addMoodButton = findViewById(R.id.addButton);
+        moodListView = findViewById(R.id.moodList);
+
+        moodProvider = MoodProvider.getInstance(FirebaseFirestore.getInstance());
+        moodArrayList = moodProvider.getMoods();
+        moodArrayAdapter = new MoodArrayAdapter(this, moodArrayList);
+        moodListView.setAdapter(moodArrayAdapter);
+
+        moodProvider.listenForUpdates(new MoodProvider.DataStatus() {
+            @Override
+            public void onDataUpdated() {
+                moodArrayAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e("Mood Update Error", error);
+            }
         });
 
-        moodList.setOnItemClickListener((parent, view, position, id) -> {
-            Mood mood = dataList.get(position);
-            EditMoodFragment fragment = new EditMoodFragment();
-
-            Bundle args = new Bundle();
-            args.putSerializable("mood", mood);
-            fragment.setArguments(args);
-
-            fragment.show(getSupportFragmentManager(), "Edit Mood");
+        addMoodButton.setOnClickListener(view -> {
+            AddMoodFragment addMoodFragment = new AddMoodFragment();
+            addMoodFragment.show(getSupportFragmentManager(), "Add Mood");
         });
 
-        // Long-click: Delete a Mood
-        moodList.setOnItemLongClickListener((parent, view, position, id) -> {
-            Mood mood = moodAdapter.getItem(position);
+        moodListView.setOnItemClickListener((adapterView, view, i, l) -> {
+            Mood mood = moodArrayAdapter.getItem(i);
+            EditMoodFragment editMoodFragment = EditMoodFragment.newInstance(mood);
+            editMoodFragment.show(getSupportFragmentManager(), "Edit Mood");
+        });
+
+        moodListView.setOnItemLongClickListener((adapterView, view, i, l) -> {
+            Mood mood = moodArrayAdapter.getItem(i);
             new AlertDialog.Builder(MainActivity.this)
                     .setTitle("Delete Confirmation")
                     .setMessage("Are you sure you want to delete this mood?")
-                    .setPositiveButton("Yes", (dialogInterface, i) -> {
-                        // Delete from Firestore
-                        moodProvider.deleteMood(mood, new MoodProvider.OnMoodOperationListener() {
-                            @Override
-                            public void onSuccess() {
-                                // Remove from local list and refresh adapter
-                                dataList.remove(mood);
-                                moodAdapter.notifyDataSetChanged();
-                            }
-
-                            @Override
-                            public void onFailure(Exception e) {
-                                // Handle error (e.g., show a toast)
-                            }
-                        });
-                    })
+                    .setPositiveButton("Yes", (dialog, which) -> moodProvider.deleteMood(mood))
                     .setNegativeButton("No", null)
                     .show();
             return true;
         });
     }
+
     @Override
     public void AddMood(Mood mood) {
-        moodProvider.addMood(mood, new MoodProvider.OnMoodOperationListener() {
-            @Override
-            public void onSuccess() {
-                dataList.add(mood);
-                moodAdapter.notifyDataSetChanged();
-            }
-            @Override
-            public void onFailure(Exception e) {
-            }
-        });
+        moodProvider.addMood(mood);
     }
+
     @Override
     public void EditMood(Mood mood) {
-        // Update the existing Mood in Firestore
-        moodProvider.updateMood(mood, new MoodProvider.OnMoodOperationListener() {
-            @Override
-            public void onSuccess() {
-                moodAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-            }
-        });
-    }
-    private void loadMoodsFromFirebase() {
-        moodProvider.getAllMoods(new MoodProvider.OnMoodsLoadedListener() {
-            @Override
-            public void onMoodsLoaded(List<Mood> moods) {
-                dataList.clear();
-                dataList.addAll(moods);
-                moodAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onError(Exception e) {
-            }
-        });
+        moodProvider.updateMood(mood);
     }
 }
