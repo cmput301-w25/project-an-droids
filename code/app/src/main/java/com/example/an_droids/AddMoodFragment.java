@@ -6,6 +6,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -18,6 +19,7 @@ import android.widget.Spinner;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class AddMoodFragment extends DialogFragment {
@@ -30,6 +32,7 @@ public class AddMoodFragment extends DialogFragment {
     private Bitmap image;
     private int REQUEST_IMAGE_GALLERY = 1;
     private int REQUEST_IMAGE_CAMERA = 2;
+    private static final int MAX_IMAGE_SIZE = 65536; // 65,536 bytes
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -61,6 +64,7 @@ public class AddMoodFragment extends DialogFragment {
                     String selectedEmotion = emotionSpinner.getSelectedItem().toString();
                     String reasonText = reasonEditText.getText().toString().trim();
                     String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
+
                     if (reasonText.isEmpty()) {
                         reasonEditText.setError("Reason cannot be empty");
                         return;
@@ -68,6 +72,25 @@ public class AddMoodFragment extends DialogFragment {
                     if (reasonText.length() > 20 || reasonText.split("\\s+").length > 3) {
                         reasonEditText.setError("Reason must be max 20 characters or 3 words");
                         return;
+                    }
+                    if (image != null) {
+                        // Compress image to meet the size limit
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        int quality = 80;
+                        image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+                        byte[] imageBytes = baos.toByteArray();
+                        while (imageBytes.length > MAX_IMAGE_SIZE && quality > 10) {
+                            baos.reset();
+                            quality -= 10;
+                            image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+                            imageBytes = baos.toByteArray();
+                        }
+                        if (imageBytes.length > MAX_IMAGE_SIZE) {
+                            reasonEditText.setError("Image exceeds maximum size of 65,536 bytes. Please choose a smaller image.");
+                            return;
+                        }
+                        // Use the compressed image for storage
+                        image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
                     }
                     listener.AddMood(new Mood(selectedEmotion, reasonText, null, null, image, selectedSocialSituation));
                 })
@@ -83,8 +106,7 @@ public class AddMoodFragment extends DialogFragment {
                     } else if (which == 1) {
                         captureImageFromCamera();
                     }
-                })
-                .show();
+                }).show();
     }
 
     private void pickImageFromGallery() {

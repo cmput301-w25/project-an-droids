@@ -8,6 +8,7 @@ import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -19,6 +20,7 @@ import android.widget.Spinner;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -26,6 +28,7 @@ import java.util.Date;
 import java.util.Locale;
 
 public class EditMoodFragment extends DialogFragment {
+
     private MoodDialogListener listener;
     private Spinner emotionSpinner;
     private Spinner socialSituationSpinner;
@@ -39,6 +42,7 @@ public class EditMoodFragment extends DialogFragment {
     private final Calendar calendar = Calendar.getInstance();
     private static final int REQUEST_IMAGE_GALLERY = 1;
     private static final int REQUEST_IMAGE_CAMERA = 2;
+    private static final int MAX_IMAGE_SIZE = 65536; // 65,536 bytes
 
     public static EditMoodFragment newInstance(Mood mood) {
         EditMoodFragment fragment = new EditMoodFragment();
@@ -62,14 +66,19 @@ public class EditMoodFragment extends DialogFragment {
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_mood, null);
+
         emotionSpinner = view.findViewById(R.id.emotionSpinner);
         socialSituationSpinner = view.findViewById(R.id.socialSituationSpinner);
         dateEditText = view.findViewById(R.id.dateEditText);
         timeEditText = view.findViewById(R.id.timeEditText);
         reasonEditText = view.findViewById(R.id.reasonEditText);
         selectImage = view.findViewById(R.id.uploadImage);
+
         Mood mood = (Mood) getArguments().getSerializable("mood");
-        if (mood == null) throw new IllegalArgumentException("No Mood passed to EditMoodFragment");
+        if (mood == null) {
+            throw new IllegalArgumentException("No Mood passed to EditMoodFragment");
+        }
+
         Date timestamp = mood.getTimestamp();
         if (timestamp != null) {
             calendar.setTime(timestamp);
@@ -81,6 +90,7 @@ public class EditMoodFragment extends DialogFragment {
             image = mood.getImage();
             selectImage.setImageBitmap(image);
         }
+
         for (int i = 0; i < emotionSpinner.getAdapter().getCount(); i++) {
             String item = (String) emotionSpinner.getAdapter().getItem(i);
             if (item.equalsIgnoreCase(mood.getEmotion().toString())) {
@@ -95,9 +105,11 @@ public class EditMoodFragment extends DialogFragment {
                 break;
             }
         }
+
         dateEditText.setOnClickListener(v -> showDatePickerDialog());
         timeEditText.setOnClickListener(v -> showTimePickerDialog());
         selectImage.setOnClickListener(v -> showImagePickerDialog());
+
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         return builder.setView(view)
                 .setTitle("Edit Mood")
@@ -107,6 +119,26 @@ public class EditMoodFragment extends DialogFragment {
                     String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
                     String reason = reasonEditText.getText().toString();
                     Date newDate = calendar.getTime();
+
+                    // If there's an image, compress it to meet the size limit.
+                    if (image != null) {
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        int quality = 80;
+                        image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+                        byte[] imageBytes = baos.toByteArray();
+                        while (imageBytes.length > MAX_IMAGE_SIZE && quality > 10) {
+                            baos.reset();
+                            quality -= 10;
+                            image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+                            imageBytes = baos.toByteArray();
+                        }
+                        if (imageBytes.length > MAX_IMAGE_SIZE) {
+                            reasonEditText.setError("Image exceeds maximum size of 65,536 bytes. Please choose a smaller image.");
+                            return;
+                        }
+                        image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                    }
+
                     mood.setEmotion(selectedEmotion);
                     mood.setTimestamp(newDate);
                     mood.setReason(reason);
