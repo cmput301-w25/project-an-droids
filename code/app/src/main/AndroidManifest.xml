@@ -23,6 +23,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".MoodActivity"/>
+        <activity android:name=".ProfileActivity" />
+
 
     </application>
 
