@@ -1,76 +1,78 @@
 package com.example.an_droids;
 
-import androidx.annotation.NonNull;
-
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
-import java.util.List;
 
 public class MoodProvider {
-    private final CollectionReference moodsCollection;
-    public MoodProvider() {
-        moodsCollection = FirebaseFirestore.getInstance().collection("Moods");
+    private static MoodProvider instance;
+    private final ArrayList<Mood> moods;
+    private final CollectionReference moodCollection;
+
+    private MoodProvider(FirebaseFirestore firestore) {
+        moods = new ArrayList<>();
+        moodCollection = firestore.collection("Moods");
     }
-    public void getAllMoods(final OnMoodsLoadedListener callback) {
-        moodsCollection.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                List<Mood> moodList = new ArrayList<>();
-                for (DocumentSnapshot document : task.getResult()) {
-                    Mood mood = document.toObject(Mood.class);
-                    if (mood != null) {
-                        mood.setId(document.getId());
-                        moodList.add(mood);
-                    }
+
+    public interface DataStatus {
+        void onDataUpdated();
+        void onError(String error);
+    }
+
+    public void listenForUpdates(DataStatus status) {
+        moodCollection.addSnapshotListener((snapshot, error) -> {
+            if (error != null) {
+                status.onError(error.getMessage());
+                return;
+            }
+            moods.clear();
+            if (snapshot != null) {
+                for (QueryDocumentSnapshot doc : snapshot) {
+                    moods.add(doc.toObject(Mood.class));
                 }
-                callback.onMoodsLoaded(moodList);
-            } else {
-                callback.onError(task.getException());
+                status.onDataUpdated();
             }
         });
     }
 
-    public void addMood(Mood mood, final OnMoodOperationListener callback) {
-        if (mood.getId() == null || mood.getId().isEmpty()) {
-            String newId = moodsCollection.document().getId();
-            mood.setId(newId);
+    public static MoodProvider getInstance(FirebaseFirestore firestore) {
+        if (instance == null) {
+            instance = new MoodProvider(firestore);
         }
-        moodsCollection.document(mood.getId()).set(mood)
-                .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(callback::onFailure);
+        return instance;
     }
 
-    public void updateMood(Mood mood, final OnMoodOperationListener callback) {
-        if (mood.getId() == null || mood.getId().isEmpty()) {
-            callback.onFailure(new IllegalArgumentException("Mood has no ID"));
-            return;
+    public ArrayList<Mood> getMoods() {
+        return moods;
+    }
+
+    public void addMood(Mood mood) {
+        DocumentReference docRef = moodCollection.document();
+        mood.setId(docRef.getId());
+        if (validMood(mood, docRef)) {
+            docRef.set(mood);
+        } else {
+            throw new IllegalArgumentException("Invalid Mood!");
         }
-        moodsCollection.document(mood.getId()).set(mood)
-                .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(callback::onFailure);
     }
 
-    public void deleteMood(Mood mood, final OnMoodOperationListener callback) {
-        if (mood.getId() == null || mood.getId().isEmpty()) {
-            callback.onFailure(new IllegalArgumentException("Mood has no ID"));
-            return;
+    public void updateMood(Mood mood) {
+        DocumentReference docRef = moodCollection.document(mood.getId());
+        if (validMood(mood, docRef)) {
+            docRef.set(mood);
+        } else {
+            throw new IllegalArgumentException("Invalid Mood!");
         }
-        moodsCollection.document(mood.getId()).delete()
-                .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(callback::onFailure);
     }
 
-    public interface OnMoodsLoadedListener {
-        void onMoodsLoaded(List<Mood> moods);
-        void onError(Exception e);
+    public void deleteMood(Mood mood) {
+        DocumentReference docRef = moodCollection.document(mood.getId());
+        docRef.delete();
     }
 
-    public interface OnMoodOperationListener {
-        void onSuccess();
-        void onFailure(Exception e);
+    private boolean validMood(Mood mood, DocumentReference docRef) {
+        return mood.getId().equals(docRef.getId()) && mood.getReason() != null && !mood.getReason().isEmpty();
     }
 }
