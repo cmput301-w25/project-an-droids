@@ -1,8 +1,10 @@
 package com.example.an_droids;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.app.AlertDialog;
 
@@ -18,6 +20,7 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements MoodDialogListener {
     private Button addMoodButton;
+    private ImageView profileButton; // Added profile button reference
     private ListView moodListView;
     private MoodProvider moodProvider;
     private ArrayList<Mood> moodArrayList;
@@ -30,6 +33,7 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         setContentView(R.layout.activity_main);
 
         addMoodButton = findViewById(R.id.addButton);
+        profileButton = findViewById(R.id.profileButton); // Initialize profile button
         moodListView = findViewById(R.id.moodList);
 
         moodProvider = MoodProvider.getInstance(FirebaseFirestore.getInstance());
@@ -49,17 +53,20 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
             }
         });
 
+        // Open AddMoodFragment when add button is clicked
         addMoodButton.setOnClickListener(view -> {
             AddMoodFragment addMoodFragment = new AddMoodFragment();
             addMoodFragment.show(getSupportFragmentManager(), "Add Mood");
         });
 
+        // Open EditMoodFragment when a mood item is clicked
         moodListView.setOnItemClickListener((adapterView, view, i, l) -> {
             Mood mood = moodArrayAdapter.getItem(i);
             EditMoodFragment editMoodFragment = EditMoodFragment.newInstance(mood);
             editMoodFragment.show(getSupportFragmentManager(), "Edit Mood");
         });
 
+        // Delete mood when long-clicked
         moodListView.setOnItemLongClickListener((adapterView, view, i, l) -> {
             Mood mood = moodArrayAdapter.getItem(i);
             new AlertDialog.Builder(MainActivity.this)
@@ -69,6 +76,12 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
                     .setNegativeButton("No", null)
                     .show();
             return true;
+        });
+
+        // Navigate to ProfileActivity when profile button is clicked
+        profileButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+            startActivity(intent);
         });
     }
 
