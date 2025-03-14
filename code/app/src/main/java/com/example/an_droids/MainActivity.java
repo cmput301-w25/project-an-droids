@@ -10,9 +10,6 @@ import android.app.AlertDialog;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -20,7 +17,7 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements MoodDialogListener {
     private Button addMoodButton;
-    private ImageView profileButton; // Added profile button reference
+    private ImageView profileButton, searchButton; // Added search button
     private ListView moodListView;
     private MoodProvider moodProvider;
     private ArrayList<Mood> moodArrayList;
@@ -33,7 +30,8 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         setContentView(R.layout.activity_main);
 
         addMoodButton = findViewById(R.id.addButton);
-        profileButton = findViewById(R.id.profileButton); // Initialize profile button
+        profileButton = findViewById(R.id.profileButton);
+        searchButton = findViewById(R.id.searchButton); // Initialize search button
         moodListView = findViewById(R.id.moodList);
 
         moodProvider = MoodProvider.getInstance(FirebaseFirestore.getInstance());
@@ -53,20 +51,17 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
             }
         });
 
-        // Open AddMoodFragment when add button is clicked
         addMoodButton.setOnClickListener(view -> {
             AddMoodFragment addMoodFragment = new AddMoodFragment();
             addMoodFragment.show(getSupportFragmentManager(), "Add Mood");
         });
 
-        // Open EditMoodFragment when a mood item is clicked
         moodListView.setOnItemClickListener((adapterView, view, i, l) -> {
             Mood mood = moodArrayAdapter.getItem(i);
             EditMoodFragment editMoodFragment = EditMoodFragment.newInstance(mood);
             editMoodFragment.show(getSupportFragmentManager(), "Edit Mood");
         });
 
-        // Delete mood when long-clicked
         moodListView.setOnItemLongClickListener((adapterView, view, i, l) -> {
             Mood mood = moodArrayAdapter.getItem(i);
             new AlertDialog.Builder(MainActivity.this)
@@ -78,9 +73,14 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
             return true;
         });
 
-        // Navigate to ProfileActivity when profile button is clicked
         profileButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+            startActivity(intent);
+        });
+
+        // Navigate to SearchActivity when search button is clicked
+        searchButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SearchActivity.class);
             startActivity(intent);
         });
     }
