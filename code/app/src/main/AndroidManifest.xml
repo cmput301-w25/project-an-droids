@@ -24,6 +24,8 @@
         </activity>
         <activity android:name=".MoodActivity"/>
         <activity android:name=".ProfileActivity" />
+        <activity android:name=".SearchActivity" />
+
 
 
     </application>
