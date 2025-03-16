@@ -1,5 +1,6 @@
 package com.example.an_droids;
 
+import android.util.Log;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -7,13 +8,12 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 
 public class MoodProvider {
-    private static MoodProvider instance;
     private final ArrayList<Mood> moods;
     private final CollectionReference moodCollection;
 
-    private MoodProvider(FirebaseFirestore firestore) {
+    public MoodProvider(FirebaseFirestore firestore, String userId) {
         moods = new ArrayList<>();
-        moodCollection = firestore.collection("Moods");
+        moodCollection = firestore.collection("Users").document(userId).collection("Moods");
     }
 
     public interface DataStatus {
@@ -24,6 +24,7 @@ public class MoodProvider {
     public void listenForUpdates(DataStatus status) {
         moodCollection.addSnapshotListener((snapshot, error) -> {
             if (error != null) {
+                Log.e("MoodProvider", "Snapshot listener error: " + error.getMessage());
                 status.onError(error.getMessage());
                 return;
             }
@@ -37,13 +38,6 @@ public class MoodProvider {
         });
     }
 
-    public static MoodProvider getInstance(FirebaseFirestore firestore) {
-        if (instance == null) {
-            instance = new MoodProvider(firestore);
-        }
-        return instance;
-    }
-
     public ArrayList<Mood> getMoods() {
         return moods;
     }
@@ -52,7 +46,9 @@ public class MoodProvider {
         DocumentReference docRef = moodCollection.document();
         mood.setId(docRef.getId());
         if (validMood(mood, docRef)) {
-            docRef.set(mood);
+            docRef.set(mood)
+                    .addOnSuccessListener(aVoid -> Log.d("MoodProvider", "Mood added successfully"))
+                    .addOnFailureListener(e -> Log.e("MoodProvider", "Error adding mood", e));
         } else {
             throw new IllegalArgumentException("Invalid Mood!");
         }
@@ -61,7 +57,9 @@ public class MoodProvider {
     public void updateMood(Mood mood) {
         DocumentReference docRef = moodCollection.document(mood.getId());
         if (validMood(mood, docRef)) {
-            docRef.set(mood);
+            docRef.set(mood)
+                    .addOnSuccessListener(aVoid -> Log.d("MoodProvider", "Mood updated successfully"))
+                    .addOnFailureListener(e -> Log.e("MoodProvider", "Error updating mood", e));
         } else {
             throw new IllegalArgumentException("Invalid Mood!");
         }
@@ -69,10 +67,13 @@ public class MoodProvider {
 
     public void deleteMood(Mood mood) {
         DocumentReference docRef = moodCollection.document(mood.getId());
-        docRef.delete();
+        docRef.delete()
+                .addOnSuccessListener(aVoid -> Log.d("MoodProvider", "Mood deleted successfully"))
+                .addOnFailureListener(e -> Log.e("MoodProvider", "Error deleting mood", e));
     }
 
     private boolean validMood(Mood mood, DocumentReference docRef) {
-        return mood.getId().equals(docRef.getId()) && mood.getReason() != null && !mood.getReason().isEmpty();
+        return mood.getId() != null && mood.getId().equals(docRef.getId())
+                && mood.getReason() != null && !mood.getReason().isEmpty();
     }
 }

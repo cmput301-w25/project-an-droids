@@ -30,8 +30,8 @@ public class AddMoodFragment extends DialogFragment {
     private EditText reasonEditText;
     private ImageView selectImage;
     private Bitmap image;
-    private int REQUEST_IMAGE_GALLERY = 1;
-    private int REQUEST_IMAGE_CAMERA = 2;
+    private final int REQUEST_IMAGE_GALLERY = 1;
+    private final int REQUEST_IMAGE_CAMERA = 2;
     private static final int MAX_IMAGE_SIZE = 65536; // 65,536 bytes
 
     @Override
@@ -54,10 +54,10 @@ public class AddMoodFragment extends DialogFragment {
         socialSituationSpinner = view.findViewById(R.id.socialSituationSpinner);
 
         reasonEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(20)});
-        selectImage.setOnClickListener(view1 -> showImagePickerDialog());
+        selectImage.setOnClickListener(v -> showImagePickerDialog());
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        return builder.setView(view)
+        builder.setView(view)
                 .setTitle("Add a Mood")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Add", (dialog, which) -> {
@@ -65,16 +65,11 @@ public class AddMoodFragment extends DialogFragment {
                     String reasonText = reasonEditText.getText().toString().trim();
                     String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
 
-                    if (reasonText.isEmpty()) {
-                        reasonEditText.setError("Reason cannot be empty");
-                        return;
-                    }
                     if (reasonText.length() > 20 || reasonText.split("\\s+").length > 3) {
                         reasonEditText.setError("Reason must be max 20 characters or 3 words");
                         return;
                     }
                     if (image != null) {
-                        // Compress image to meet the size limit
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         int quality = 80;
                         image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
@@ -89,22 +84,24 @@ public class AddMoodFragment extends DialogFragment {
                             reasonEditText.setError("Image exceeds maximum size of 65,536 bytes. Please choose a smaller image.");
                             return;
                         }
-                        // Use the compressed image for storage
                         image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
                     }
-                    listener.AddMood(new Mood(selectedEmotion, reasonText, null, null, image, selectedSocialSituation));
-                })
-                .create();
+                    Mood newMood = new Mood(selectedEmotion, reasonText, null, null, image, selectedSocialSituation);
+                    listener.AddMood(newMood);
+                });
+        return builder.create();
     }
 
     private void showImagePickerDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Select Image")
-                .setItems(new CharSequence[]{"Choose from Gallery", "Take a Picture", "Go back"}, (dialog, which) -> {
+                .setItems(new CharSequence[]{"Choose from Gallery", "Take a Picture", "Cancel"}, (dialog, which) -> {
                     if (which == 0) {
                         pickImageFromGallery();
                     } else if (which == 1) {
                         captureImageFromCamera();
+                    } else {
+                        dialog.dismiss();
                     }
                 }).show();
     }

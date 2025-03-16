@@ -17,11 +17,12 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements MoodDialogListener {
     private Button addMoodButton;
-    private ImageView profileButton, searchButton; // Added search button
+    private ImageView profileButton, searchButton;
     private ListView moodListView;
     private MoodProvider moodProvider;
     private ArrayList<Mood> moodArrayList;
     private MoodArrayAdapter moodArrayAdapter;
+    private String userId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,12 +30,22 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        // Get the userId passed from SignUpActivity
+        userId = getIntent().getStringExtra("userId");
+        if (userId == null) {
+            // If no user is found, redirect to sign-up.
+            startActivity(new Intent(MainActivity.this, SignupActivity.class));
+            finish();
+            return;
+        }
+
         addMoodButton = findViewById(R.id.addButton);
         profileButton = findViewById(R.id.profileButton);
-        searchButton = findViewById(R.id.searchButton); // Initialize search button
+        searchButton = findViewById(R.id.searchButton);
         moodListView = findViewById(R.id.moodList);
 
-        moodProvider = MoodProvider.getInstance(FirebaseFirestore.getInstance());
+        // Create a new MoodProvider for the current user
+        moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
         moodArrayList = moodProvider.getMoods();
         moodArrayAdapter = new MoodArrayAdapter(this, moodArrayList);
         moodListView.setAdapter(moodArrayAdapter);
@@ -44,14 +55,13 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
             public void onDataUpdated() {
                 moodArrayAdapter.notifyDataSetChanged();
             }
-
             @Override
             public void onError(String error) {
-                Log.e("Mood Update Error", error);
+                Log.e("MainActivity", "Error listening for mood updates: " + error);
             }
         });
 
-        addMoodButton.setOnClickListener(view -> {
+        addMoodButton.setOnClickListener(v -> {
             AddMoodFragment addMoodFragment = new AddMoodFragment();
             addMoodFragment.show(getSupportFragmentManager(), "Add Mood");
         });
@@ -74,14 +84,11 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         });
 
         profileButton.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(MainActivity.this, ProfileActivity.class));
         });
 
-        // Navigate to SearchActivity when search button is clicked
         searchButton.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, SearchActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(MainActivity.this, SearchActivity.class));
         });
     }
 
