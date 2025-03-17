@@ -1,61 +1,110 @@
 package com.example.an_droids;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ProfileActivity extends AppCompatActivity {
 
     private EditText usernameEditText, emailEditText, dobEditText, locationEditText;
-    private Button saveButton, editButton;
+    private Button saveButton;
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore firestore;
+    private FirebaseUser firebaseUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        // Maintain original structure while adding new functionality
+        // Initialize UI elements
         usernameEditText = findViewById(R.id.usernameEditText);
         emailEditText = findViewById(R.id.emailEditText);
         dobEditText = findViewById(R.id.dobEditText);
         locationEditText = findViewById(R.id.locationEditText);
         saveButton = findViewById(R.id.saveButton);
-        editButton = findViewById(R.id.editButton);
 
-        // Initially enable editing mode (as before)
-        setEditingEnabled(true);
+        mAuth = FirebaseAuth.getInstance();
+        firestore = FirebaseFirestore.getInstance();
+        firebaseUser = mAuth.getCurrentUser();
 
-        saveButton.setOnClickListener(v -> {
-            saveProfileData(); // Maintain original saving functionality
-            setEditingEnabled(false); // Disable fields
-            saveButton.setVisibility(View.GONE); // Hide Save button
-            editButton.setVisibility(View.VISIBLE); // Show Edit button
-        });
+        // Disable email editing
+        emailEditText.setEnabled(false);
 
-        editButton.setOnClickListener(v -> {
-            setEditingEnabled(true); // Enable fields for editing
-            editButton.setVisibility(View.GONE); // Hide Edit button
-            saveButton.setVisibility(View.VISIBLE); // Show Save button
-        });
+        if (firebaseUser != null) {
+            loadUserProfile();
+        }
+
+        saveButton.setOnClickListener(v -> updateUserProfile());
     }
 
-    private void saveProfileData() {
-        // Get user input (maintaining original structure)
-        String username = usernameEditText.getText().toString();
-        String email = emailEditText.getText().toString();
-        String dob = dobEditText.getText().toString();
-        String location = locationEditText.getText().toString();
+    private void loadUserProfile() {
+        firestore.collection("Users").document(firebaseUser.getUid()).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        usernameEditText.setText(documentSnapshot.getString("username"));
 
-        // TODO: Save data (e.g., Firebase or SharedPreferences)
+                        // Ensure email is displayed correctly
+                        String email = documentSnapshot.contains("email") ?
+                                documentSnapshot.getString("email") : firebaseUser.getEmail();
+                        emailEditText.setText(email);
+
+                        dobEditText.setText(documentSnapshot.getString("dob"));
+                        locationEditText.setText(documentSnapshot.getString("location"));
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(ProfileActivity.this, "Failed to load profile", Toast.LENGTH_SHORT).show());
     }
 
-    private void setEditingEnabled(boolean enabled) {
-        usernameEditText.setEnabled(enabled);
-        emailEditText.setEnabled(enabled);
-        dobEditText.setEnabled(enabled);
-        locationEditText.setEnabled(enabled);
+    private void updateUserProfile() {
+        if (firebaseUser == null) {
+            Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String newUsername = usernameEditText.getText().toString().trim();
+        String newDOB = dobEditText.getText().toString().trim();
+        String newLocation = locationEditText.getText().toString().trim();
+
+        // Retrieve the current email to prevent overwriting it as null
+        firestore.collection("Users").document(firebaseUser.getUid()).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String email = documentSnapshot.contains("email") ?
+                                documentSnapshot.getString("email") : firebaseUser.getEmail();
+
+                        Map<String, Object> updatedData = new HashMap<>();
+                        updatedData.put("username", newUsername);
+                        updatedData.put("dob", newDOB);
+                        updatedData.put("location", newLocation);
+                        updatedData.put("email", email); // Preserve email
+
+                        firestore.collection("Users").document(firebaseUser.getUid())
+                                .set(updatedData)
+                                .addOnSuccessListener(aVoid ->
+                                        Toast.makeText(ProfileActivity.this, "Profile Updated", Toast.LENGTH_SHORT).show())
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(ProfileActivity.this, "Failed to update profile", Toast.LENGTH_SHORT).show());
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(ProfileActivity.this, "Failed to retrieve email", Toast.LENGTH_SHORT).show());
     }
 }
+
+
 

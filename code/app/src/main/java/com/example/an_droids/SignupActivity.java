@@ -69,6 +69,8 @@ public class SignupActivity extends AppCompatActivity {
                                         .set(newUser)
                                         .addOnSuccessListener(aVoid -> {
                                             Toast.makeText(SignupActivity.this, "Sign Up Successful", Toast.LENGTH_SHORT).show();
+
+                                            // Redirect to MainActivity instead of ProfileActivity
                                             Intent intent = new Intent(SignupActivity.this, MainActivity.class);
                                             intent.putExtra("userId", firebaseUser.getUid());
                                             startActivity(intent);
@@ -87,3 +89,4 @@ public class SignupActivity extends AppCompatActivity {
         loginLink.setOnClickListener(v -> startActivity(new Intent(SignupActivity.this, LoginActivity.class)));
     }
 }
+
