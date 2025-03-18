@@ -1,5 +1,6 @@
 package com.example.an_droids;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -73,6 +74,26 @@ public class SearchActivity extends AppCompatActivity {
             }
             return false;
         });
+
+        // Set the item click listener to navigate to the profile page of clicked user
+        searchResultsListView.setOnItemClickListener((parent, view, position, id) -> {
+            if (position < filteredUsernames.size()) {
+                String clickedUsername = filteredUsernames.get(position);
+
+                // Debugging: Show a toast to confirm the username clicked
+                Toast.makeText(SearchActivity.this, "Opening profile of: " + clickedUsername, Toast.LENGTH_SHORT).show();
+
+                // Ensure clickedUsername is not null
+                if (clickedUsername != null && !clickedUsername.isEmpty()) {
+                    Intent intent = new Intent(SearchActivity.this, ViewUserProfile.class);
+                    intent.putExtra("username", clickedUsername);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(SearchActivity.this, "Error: No username selected", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
     }
 
     private void loadCurrentUser() {
