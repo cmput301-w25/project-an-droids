@@ -22,8 +22,8 @@ public class ViewUserProfile extends AppCompatActivity {
 
         firestore = FirebaseFirestore.getInstance();
         usernameTextView = findViewById(R.id.usernameTextView);
-        emailTextView = findViewById(R.id.emailTextView);
-        dobTextView = findViewById(R.id.dobTextView);
+        //emailTextView = findViewById(R.id.emailTextView);
+        //dobTextView = findViewById(R.id.dobTextView);
         locationTextView = findViewById(R.id.locationTextView);
 
         // Get the username passed from the SearchActivity
@@ -52,8 +52,8 @@ public class ViewUserProfile extends AppCompatActivity {
                         String location = document.contains("location") ? document.getString("location") : "Not available";
 
                         usernameTextView.setText(username);
-                        emailTextView.setText(email);
-                        dobTextView.setText(dob);
+                        //emailTextView.setText(email);
+                        //dobTextView.setText(dob);
                         locationTextView.setText(location);
                     } else {
                         Toast.makeText(ViewUserProfile.this, "User not found", Toast.LENGTH_SHORT).show();
