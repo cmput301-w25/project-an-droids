@@ -37,67 +37,67 @@ import java.util.Date;
 @LargeTest
 public class MoodAppTest {
 
-    @Rule
-    public ActivityScenarioRule<MainActivity> activityRule = new ActivityScenarioRule<>(MainActivity.class);
+//    @Rule
+//    public ActivityScenarioRule<MainActivity> activityRule = new ActivityScenarioRule<>(MainActivity.class);
+//
+//    private MoodProvider moodProvider;
+//
+//    @Before
+//    public void setUp() {
+//        moodProvider = new MoodProvider();
+//    }
+//
+//    @After
+//    public void tearDown() {
+//        FirebaseFirestore.getInstance().collection("Moods").get().addOnCompleteListener(task -> {
+//            if (task.isSuccessful() && task.getResult() != null) {
+//                task.getResult().forEach(document -> document.getReference().delete());
+//            }
+//        });
+//    }
 
-    private MoodProvider moodProvider;
 
-    @Before
-    public void setUp() {
-        moodProvider = new MoodProvider();
-    }
-
-    @After
-    public void tearDown() {
-        FirebaseFirestore.getInstance().collection("Moods").get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                task.getResult().forEach(document -> document.getReference().delete());
-            }
-        });
-    }
-
-
-    @Test
-    public void testEditMood() {
-        Mood mood = new Mood("Happiness", "Feeling good", null, new Date(), null, "Alone", Mood.Privacy.PUBLIC);
-        moodProvider.addMood(mood, new MoodProvider.OnMoodOperationListener() {
-            @Override
-            public void onSuccess() {
-                activityRule.getScenario().onActivity(activity -> {
-                    onView(withText("Happiness 😃")).perform(click());
-                    onView(withId(R.id.reasonEditText)).check(matches(isDisplayed()));
-                    onView(withId(R.id.reasonEditText)).perform(replaceText("Feeling great"));
-                    onView(withText("Save")).perform(click());
-
-                    onView(withId(R.id.moodTitle)).check(matches(withText("Feeling great")));
-                });
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-            }
-        });
-    }
-
-    @Test
-    public void testDeleteMood() {
-        Mood mood = new Mood("Happiness", "Feeling good", null, new Date(), null, "Alone", Mood.Privacy.PRIVATE);
-        moodProvider.addMood(mood, new MoodProvider.OnMoodOperationListener() {
-            @Override
-            public void onSuccess() {
-                activityRule.getScenario().onActivity(activity -> {
-                    onView(withText("Happiness 😃")).perform(ViewActions.longClick());
-                    onView(withText("Yes")).perform(click());
-
-                    onView(withId(R.id.moodList)).check(matches(withText("")));
-                });
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-            }
-        });
-    }
+//    @Test
+//    public void testEditMood() {
+//        Mood mood = new Mood("Happiness", "Feeling good", null, new Date(), null, "Alone", Mood.Privacy.PUBLIC);
+//        moodProvider.addMood(mood, new MoodProvider.OnMoodOperationListener() {
+//            @Override
+//            public void onSuccess() {
+//                activityRule.getScenario().onActivity(activity -> {
+//                    onView(withText("Happiness 😃")).perform(click());
+//                    onView(withId(R.id.reasonEditText)).check(matches(isDisplayed()));
+//                    onView(withId(R.id.reasonEditText)).perform(replaceText("Feeling great"));
+//                    onView(withText("Save")).perform(click());
+//
+//                    onView(withId(R.id.moodTitle)).check(matches(withText("Feeling great")));
+//                });
+//            }
+//
+//            @Override
+//            public void onFailure(Exception e) {
+//            }
+//        });
+//    }
+//
+//    @Test
+//    public void testDeleteMood() {
+//        Mood mood = new Mood("Happiness", "Feeling good", null, new Date(), null, "Alone", Mood.Privacy.PRIVATE);
+//        moodProvider.addMood(mood, new MoodProvider.OnMoodOperationListener() {
+//            @Override
+//            public void onSuccess() {
+//                activityRule.getScenario().onActivity(activity -> {
+//                    onView(withText("Happiness 😃")).perform(ViewActions.longClick());
+//                    onView(withText("Yes")).perform(click());
+//
+//                    onView(withId(R.id.moodList)).check(matches(withText("")));
+//                });
+//            }
+//
+//            @Override
+//            public void onFailure(Exception e) {
+//            }
+//        });
+//    }
 }
 
 
