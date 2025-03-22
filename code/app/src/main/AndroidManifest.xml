@@ -30,6 +30,8 @@
             android:exported="true" />
         <activity android:name=".ProfileActivity" />
         <activity android:name=".SearchActivity" />
+        <activity android:name=".ViewUserProfile" />
+
 
     </application>
 
