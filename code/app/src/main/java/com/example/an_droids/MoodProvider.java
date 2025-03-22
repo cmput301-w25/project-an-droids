@@ -74,6 +74,7 @@ public class MoodProvider {
 
     private boolean validMood(Mood mood, DocumentReference docRef) {
         return mood.getId() != null && mood.getId().equals(docRef.getId())
-                && mood.getReason() != null && !mood.getReason().isEmpty();
+                && mood.getReason() != null && !mood.getReason().isEmpty()
+                && mood.getPrivacy() != null;
     }
 }

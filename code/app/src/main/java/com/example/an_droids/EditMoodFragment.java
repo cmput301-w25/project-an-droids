@@ -32,6 +32,7 @@ public class EditMoodFragment extends DialogFragment {
     private MoodDialogListener listener;
     private Spinner emotionSpinner;
     private Spinner socialSituationSpinner;
+    private Spinner privacySpinner;
     private EditText dateEditText;
     private EditText timeEditText;
     private EditText reasonEditText;
@@ -69,6 +70,7 @@ public class EditMoodFragment extends DialogFragment {
 
         emotionSpinner = view.findViewById(R.id.emotionSpinner);
         socialSituationSpinner = view.findViewById(R.id.socialSituationSpinner);
+        privacySpinner = view.findViewById(R.id.privacySpinner);
         dateEditText = view.findViewById(R.id.dateEditText);
         timeEditText = view.findViewById(R.id.timeEditText);
         reasonEditText = view.findViewById(R.id.reasonEditText);
@@ -102,6 +104,15 @@ public class EditMoodFragment extends DialogFragment {
             String item = (String) socialSituationSpinner.getAdapter().getItem(i);
             if (item.equalsIgnoreCase(mood.getSocialSituation())) {
                 socialSituationSpinner.setSelection(i);
+                break;
+            }
+        }
+        String privacyDisplay = mood.getPrivacy().name().substring(0, 1).toUpperCase() +
+                mood.getPrivacy().name().substring(1).toLowerCase();
+        for (int i = 0; i < privacySpinner.getAdapter().getCount(); i++) {
+            String item = (String) privacySpinner.getAdapter().getItem(i);
+            if (item.equals(privacyDisplay)) {
+                privacySpinner.setSelection(i);
                 break;
             }
         }
@@ -144,6 +155,9 @@ public class EditMoodFragment extends DialogFragment {
                     mood.setReason(reason);
                     mood.setImage(image);
                     mood.setSocialSituation(selectedSocialSituation);
+                    String selectedPrivacyStr = privacySpinner.getSelectedItem().toString();
+                    Mood.Privacy selectedPrivacy = Mood.Privacy.valueOf(selectedPrivacyStr.toUpperCase());
+                    mood.setPrivacy(selectedPrivacy);
                     listener.EditMood(mood);
                 }).create();
     }
