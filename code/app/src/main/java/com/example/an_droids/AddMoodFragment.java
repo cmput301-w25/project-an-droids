@@ -27,6 +27,7 @@ public class AddMoodFragment extends DialogFragment {
     private MoodDialogListener listener;
     private Spinner emotionSpinner;
     private Spinner socialSituationSpinner;
+    private Spinner privacySpinner;
     private EditText reasonEditText;
     private ImageView selectImage;
     private Bitmap image;
@@ -52,6 +53,7 @@ public class AddMoodFragment extends DialogFragment {
         reasonEditText = view.findViewById(R.id.reasonEditText);
         selectImage = view.findViewById(R.id.uploadImage);
         socialSituationSpinner = view.findViewById(R.id.socialSituationSpinner);
+        privacySpinner = view.findViewById(R.id.privacySpinner);
 
         reasonEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(20)});
         selectImage.setOnClickListener(v -> showImagePickerDialog());
@@ -64,6 +66,7 @@ public class AddMoodFragment extends DialogFragment {
                     String selectedEmotion = emotionSpinner.getSelectedItem().toString();
                     String reasonText = reasonEditText.getText().toString().trim();
                     String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
+                    String selectedPrivacy = privacySpinner.getSelectedItem().toString();
 
                     if (reasonText.length() > 20 || reasonText.split("\\s+").length > 3) {
                         reasonEditText.setError("Reason must be max 20 characters or 3 words");
@@ -86,7 +89,7 @@ public class AddMoodFragment extends DialogFragment {
                         }
                         image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
                     }
-                    Mood newMood = new Mood(selectedEmotion, reasonText, null, null, image, selectedSocialSituation);
+                    Mood newMood = new Mood(selectedEmotion, reasonText, null, null, image, selectedSocialSituation, Mood.Privacy.valueOf(selectedPrivacy));
                     listener.AddMood(newMood);
                 });
         return builder.create();

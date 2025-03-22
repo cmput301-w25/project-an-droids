@@ -59,7 +59,7 @@ public class MoodAppTest {
 
     @Test
     public void testEditMood() {
-        Mood mood = new Mood("Happiness", "Feeling good", null, new Date(), null, "Alone");
+        Mood mood = new Mood("Happiness", "Feeling good", null, new Date(), null, "Alone", Mood.Privacy.PUBLIC);
         moodProvider.addMood(mood, new MoodProvider.OnMoodOperationListener() {
             @Override
             public void onSuccess() {
@@ -81,7 +81,7 @@ public class MoodAppTest {
 
     @Test
     public void testDeleteMood() {
-        Mood mood = new Mood("Happiness", "Feeling good", null, new Date(), null, "Alone");
+        Mood mood = new Mood("Happiness", "Feeling good", null, new Date(), null, "Alone", Mood.Privacy.PRIVATE);
         moodProvider.addMood(mood, new MoodProvider.OnMoodOperationListener() {
             @Override
             public void onSuccess() {

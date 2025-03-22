@@ -39,19 +39,25 @@ public class Mood implements Serializable {
         public String getEmoji() { return emoji; }
         public String getColorHex() { return colorHex; }
     }
+    public enum Privacy {
+        PRIVATE,
+        PUBLIC
+    }
     private EmotionalState emotion;
+    private Privacy privacy;
     public Mood() {}
-    public Mood(String emotion, String reason, String trigger, Date timestamp, Bitmap image, String socialSituation) {
+    public Mood(String emotion, String reason, String trigger, Date timestamp, Bitmap image, String socialSituation, Privacy privacy) {
         this.id = UUID.randomUUID().toString();
         this.timestamp = (timestamp != null) ? timestamp : new Date();
         this.emotion = EmotionalState.valueOf(emotion);
         this.reason = reason;
         this.trigger = trigger;
         this.socialSituation = socialSituation;
+        this.privacy = privacy;
         setImage(image);
     }
-    public Mood(String emotion, String reason, String trigger, Date timestamp, String socialSituation) {
-        this(emotion, reason, trigger, timestamp, null, socialSituation);
+    public Mood(String emotion, String reason, String trigger, Date timestamp, String socialSituation, Privacy privacy) {
+        this(emotion, reason, trigger, timestamp, null, socialSituation, privacy);
     }
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -66,6 +72,15 @@ public class Mood implements Serializable {
     public String getEmotionEmoji() { return emotion.getEmoji(); }
     public String getEmotionColorHex() { return emotion.getColorHex(); }
     public String getReason() { return reason; }
+
+    public void setPrivacy(Privacy privacy) {
+        this.privacy = privacy;
+    }
+
+    public Privacy getPrivacy() {
+        return privacy;
+    }
+
     public void setReason(String reason) { this.reason = reason; }
     @Exclude
     public Bitmap getImage() {
