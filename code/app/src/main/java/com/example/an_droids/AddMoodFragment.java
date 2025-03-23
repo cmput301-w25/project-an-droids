@@ -1,26 +1,42 @@
 package com.example.an_droids;
-
+//
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.InputFilter;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.DialogFragment;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 
 public class AddMoodFragment extends DialogFragment {
 
@@ -29,10 +45,13 @@ public class AddMoodFragment extends DialogFragment {
     private Spinner socialSituationSpinner;
     private EditText reasonEditText;
     private ImageView selectImage;
+    private ImageView locationButton;
+    private TextView locationText;
     private Bitmap image;
+    private Location currentLocation;
     private final int REQUEST_IMAGE_GALLERY = 1;
     private final int REQUEST_IMAGE_CAMERA = 2;
-    private static final int MAX_IMAGE_SIZE = 65536; // 65,536 bytes
+    private static final int MAX_IMAGE_SIZE = 65536;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -48,61 +67,145 @@ public class AddMoodFragment extends DialogFragment {
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_add_mood, null);
+
         emotionSpinner = view.findViewById(R.id.emotionSpinner);
         reasonEditText = view.findViewById(R.id.reasonEditText);
         selectImage = view.findViewById(R.id.uploadImage);
         socialSituationSpinner = view.findViewById(R.id.socialSituationSpinner);
+        locationButton = view.findViewById(R.id.locationButton);
+        locationText = view.findViewById(R.id.locationText);
 
         reasonEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(20)});
         selectImage.setOnClickListener(v -> showImagePickerDialog());
+        locationButton.setOnClickListener(v -> fetchLocation());
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setView(view)
+        AlertDialog dialog = new AlertDialog.Builder(getContext())
+                .setView(view)
                 .setTitle("Add a Mood")
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Add", (dialog, which) -> {
-                    String selectedEmotion = emotionSpinner.getSelectedItem().toString();
-                    String reasonText = reasonEditText.getText().toString().trim();
-                    String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
+                .setPositiveButton("Add", null)
+                .create();
 
-                    if (reasonText.length() > 20 || reasonText.split("\\s+").length > 3) {
-                        reasonEditText.setError("Reason must be max 20 characters or 3 words");
+        dialog.setOnShowListener(dialogInterface -> {
+            Button addButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            addButton.setOnClickListener(v -> {
+                String selectedEmotion = emotionSpinner.getSelectedItem().toString();
+                String reasonText = reasonEditText.getText().toString().trim();
+                String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
+
+                if (reasonText.length() > 20 || reasonText.split("\\s+").length > 3) {
+                    reasonEditText.setError("Max 20 characters or 3 words");
+                    return;
+                }
+
+                if (image != null) {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    int quality = 80;
+                    image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+                    byte[] imageBytes = baos.toByteArray();
+                    while (imageBytes.length > MAX_IMAGE_SIZE && quality > 10) {
+                        baos.reset();
+                        quality -= 10;
+                        image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+                        imageBytes = baos.toByteArray();
+                    }
+                    if (imageBytes.length > MAX_IMAGE_SIZE) {
+                        reasonEditText.setError("Image too large. Choose a smaller one.");
                         return;
                     }
-                    if (image != null) {
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        int quality = 80;
-                        image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
-                        byte[] imageBytes = baos.toByteArray();
-                        while (imageBytes.length > MAX_IMAGE_SIZE && quality > 10) {
-                            baos.reset();
-                            quality -= 10;
-                            image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
-                            imageBytes = baos.toByteArray();
-                        }
-                        if (imageBytes.length > MAX_IMAGE_SIZE) {
-                            reasonEditText.setError("Image exceeds maximum size of 65,536 bytes. Please choose a smaller image.");
-                            return;
-                        }
-                        image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
-                    }
-                    Mood newMood = new Mood(selectedEmotion, reasonText, null, null, image, selectedSocialSituation);
+                    image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                }
+
+                Mood newMood = new Mood(selectedEmotion, reasonText, null, null, image, selectedSocialSituation);
+                if (currentLocation != null) {
+                    newMood.setLatitude(currentLocation.getLatitude());
+                    newMood.setLongitude(currentLocation.getLongitude());
+                }
+
+                // ✅ Save address if present
+                if (locationText.getTag() != null) {
+                    newMood.setAddress(locationText.getTag().toString());
+                }
+
+                try {
                     listener.AddMood(newMood);
-                });
-        return builder.create();
+                    dialog.dismiss();
+                } catch (Exception e) {
+                    Toast.makeText(getContext(), "Failed to add mood", Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                }
+            });
+        });
+
+        return dialog;
+    }
+
+    private void fetchLocation() {
+        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
+
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(requireActivity(),
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 101);
+            return;
+        }
+
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(location -> {
+                    if (location != null) {
+                        currentLocation = location;
+
+                        Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
+                        try {
+                            List<Address> addresses = geocoder.getFromLocation(
+                                    location.getLatitude(),
+                                    location.getLongitude(),
+                                    1
+                            );
+
+                            if (!addresses.isEmpty()) {
+                                Address address = addresses.get(0);
+
+                                StringBuilder addressString = new StringBuilder();
+                                if (address.getThoroughfare() != null)
+                                    addressString.append(address.getThoroughfare()).append(" ");
+                                if (address.getFeatureName() != null)
+                                    addressString.append(address.getFeatureName()).append(", ");
+                                if (address.getLocality() != null)
+                                    addressString.append(address.getLocality()).append(", ");
+                                if (address.getAdminArea() != null)
+                                    addressString.append(address.getAdminArea()).append(", ");
+                                if (address.getPostalCode() != null)
+                                    addressString.append(address.getPostalCode()).append(", ");
+                                if (address.getCountryName() != null)
+                                    addressString.append(address.getCountryName());
+
+                                String fullAddress = addressString.toString();
+                                locationText.setText(fullAddress);
+                                locationText.setTag(fullAddress); // ✅ Save full address for Add button
+                            } else {
+                                locationText.setText("Location: Unknown");
+                            }
+
+                        } catch (IOException e) {
+                            locationText.setText("Geocoder failed");
+                            e.printStackTrace();
+                        }
+
+                    } else {
+                        locationText.setText("Location: Unavailable");
+                    }
+                })
+                .addOnFailureListener(e -> locationText.setText("Failed to get location"));
     }
 
     private void showImagePickerDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Select Image")
                 .setItems(new CharSequence[]{"Choose from Gallery", "Take a Picture", "Cancel"}, (dialog, which) -> {
-                    if (which == 0) {
-                        pickImageFromGallery();
-                    } else if (which == 1) {
-                        captureImageFromCamera();
-                    } else {
-                        dialog.dismiss();
-                    }
+                    if (which == 0) pickImageFromGallery();
+                    else if (which == 1) captureImageFromCamera();
+                    else dialog.dismiss();
                 }).show();
     }
 
@@ -138,3 +241,6 @@ public class AddMoodFragment extends DialogFragment {
         }
     }
 }
+
+
+
