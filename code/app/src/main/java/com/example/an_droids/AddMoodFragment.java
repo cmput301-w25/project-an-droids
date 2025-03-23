@@ -16,6 +16,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
@@ -33,7 +35,7 @@ public class AddMoodFragment extends DialogFragment {
     private Bitmap image;
     private final int REQUEST_IMAGE_GALLERY = 1;
     private final int REQUEST_IMAGE_CAMERA = 2;
-    private static final int MAX_IMAGE_SIZE = 65536; // 65,536 bytes
+    private static final int MAX_IMAGE_SIZE = 65536;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -55,7 +57,7 @@ public class AddMoodFragment extends DialogFragment {
         socialSituationSpinner = view.findViewById(R.id.socialSituationSpinner);
         privacySpinner = view.findViewById(R.id.privacySpinner);
 
-        reasonEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(20)});
+        reasonEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(200)});
         selectImage.setOnClickListener(v -> showImagePickerDialog());
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
@@ -68,10 +70,6 @@ public class AddMoodFragment extends DialogFragment {
                     String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
                     String selectedPrivacy = privacySpinner.getSelectedItem().toString();
 
-                    if (reasonText.length() > 20 || reasonText.split("\\s+").length > 3) {
-                        reasonEditText.setError("Reason must be max 20 characters or 3 words");
-                        return;
-                    }
                     if (image != null) {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         int quality = 80;
@@ -84,12 +82,12 @@ public class AddMoodFragment extends DialogFragment {
                             imageBytes = baos.toByteArray();
                         }
                         if (imageBytes.length > MAX_IMAGE_SIZE) {
-                            reasonEditText.setError("Image exceeds maximum size of 65,536 bytes. Please choose a smaller image.");
+                            Toast.makeText(getContext(), "Image exceeds maximum size of 65,536 bytes. Please choose a smaller image.", Toast.LENGTH_LONG).show();
                             return;
                         }
                         image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
                     }
-                    Mood newMood = new Mood(selectedEmotion, reasonText, null, null, image, selectedSocialSituation, Mood.Privacy.valueOf(selectedPrivacy));
+                    Mood newMood = new Mood(selectedEmotion, reasonText, null, image, selectedSocialSituation, Mood.Privacy.valueOf(selectedPrivacy));
                     listener.AddMood(newMood);
                 });
         return builder.create();
