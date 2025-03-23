@@ -1,19 +1,28 @@
 package com.example.an_droids;
 
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
-
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ViewUserProfile extends AppCompatActivity {
-
     private FirebaseFirestore firestore;
-    private TextView usernameTextView, emailTextView, dobTextView, locationTextView;
+    private FirebaseAuth mAuth;
+    private FirebaseUser currentUser;
+    private String searchedUserId;
+    private String searchedUsername;
+    private Button followButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,40 +30,42 @@ public class ViewUserProfile extends AppCompatActivity {
         setContentView(R.layout.view_user_profile);
 
         firestore = FirebaseFirestore.getInstance();
-        usernameTextView = findViewById(R.id.usernameTextView);
-        //emailTextView = findViewById(R.id.emailTextView);
-        //dobTextView = findViewById(R.id.dobTextView);
-        locationTextView = findViewById(R.id.locationTextView);
+        mAuth = FirebaseAuth.getInstance();
+        currentUser = mAuth.getCurrentUser();
 
-        // Get the username passed from the SearchActivity
-        String username = getIntent().getStringExtra("username");
-
-        // Check if username is null or empty
-        if (username == null || username.isEmpty()) {
+        // Get the searched user's username from the intent
+        searchedUsername = getIntent().getStringExtra("username");
+        if (searchedUsername == null || searchedUsername.isEmpty()) {
             Toast.makeText(this, "Error: No user found", Toast.LENGTH_SHORT).show();
-            finish(); // Close activity if no username is passed
-        } else {
-            Toast.makeText(this, "Loading profile of: " + username, Toast.LENGTH_SHORT).show();
-            loadUserProfile(username);
+            finish();
+            return;
         }
+
+        // Initialize views
+        TextView usernameTextView = findViewById(R.id.usernameTextView);
+        followButton = findViewById(R.id.followButton);
+
+        // Display the searched user's username
+        usernameTextView.setText(searchedUsername);
+
+        // Load the searched user's profile
+        loadUserProfile();
+
+        // Set up the Follow Button
+        followButton.setOnClickListener(v -> followUser());
     }
 
-    private void loadUserProfile(String username) {
-        firestore.collection("Users").whereEqualTo("username", username)
+    private void loadUserProfile() {
+        firestore.collection("Users")
+                .whereEqualTo("username", searchedUsername)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (!queryDocumentSnapshots.isEmpty()) {
                         DocumentSnapshot document = queryDocumentSnapshots.getDocuments().get(0);
+                        searchedUserId = document.getId(); // Get the searched user's ID
 
-                        // Check if document contains expected fields
-                        String email = document.contains("email") ? document.getString("email") : "Not available";
-                        String dob = document.contains("dob") ? document.getString("dob") : "Not available";
-                        String location = document.contains("location") ? document.getString("location") : "Not available";
-
-                        usernameTextView.setText(username);
-                        //emailTextView.setText(email);
-                        //dobTextView.setText(dob);
-                        locationTextView.setText(location);
+                        // Check if the current user is already following the searched user
+                        checkIfFollowing();
                     } else {
                         Toast.makeText(ViewUserProfile.this, "User not found", Toast.LENGTH_SHORT).show();
                     }
@@ -64,4 +75,97 @@ public class ViewUserProfile extends AppCompatActivity {
                 });
     }
 
+    private void checkIfFollowing() {
+        if (currentUser == null || searchedUserId == null) {
+            return;
+        }
+
+        firestore.collection("Users").document(currentUser.getUid())
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        List<String> followingList = (List<String>) documentSnapshot.get("following");
+                        if (followingList != null && followingList.contains(searchedUserId)) {
+                            // The current user is already following the searched user
+                            followButton.setText("Unfollow");
+                        } else {
+                            // The current user is not following the searched user
+                            followButton.setText("Follow");
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("ViewUserProfile", "Error checking follow status: " + e.getMessage());
+                });
+    }
+
+    private void followUser() {
+        if (currentUser == null || searchedUserId == null) {
+            Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String currentUserId = currentUser.getUid();
+
+        // Check if the current user is already following the searched user
+        firestore.collection("Users").document(currentUserId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        List<String> followingList = (List<String>) documentSnapshot.get("following");
+                        if (followingList != null && followingList.contains(searchedUserId)) {
+                            // Unfollow the user
+                            unfollowUser(currentUserId, searchedUserId);
+                        } else {
+                            // Follow the user
+                            followUser(currentUserId, searchedUserId);
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("ViewUserProfile", "Error checking follow status: " + e.getMessage());
+                });
+    }
+
+    private void followUser(String currentUserId, String searchedUserId) {
+        // Add the searched user to the current user's following list
+        firestore.collection("Users").document(currentUserId)
+                .update("following", FieldValue.arrayUnion(searchedUserId))
+                .addOnSuccessListener(aVoid -> {
+                    // Add the current user to the searched user's followers list
+                    firestore.collection("Users").document(searchedUserId)
+                            .update("followers", FieldValue.arrayUnion(currentUserId))
+                            .addOnSuccessListener(aVoid1 -> {
+                                Toast.makeText(ViewUserProfile.this, "Followed successfully", Toast.LENGTH_SHORT).show();
+                                followButton.setText("Unfollow");
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("ViewUserProfile", "Error updating followers: " + e.getMessage());
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("ViewUserProfile", "Error updating following: " + e.getMessage());
+                });
+    }
+
+    private void unfollowUser(String currentUserId, String searchedUserId) {
+        // Remove the searched user from the current user's following list
+        firestore.collection("Users").document(currentUserId)
+                .update("following", FieldValue.arrayRemove(searchedUserId))
+                .addOnSuccessListener(aVoid -> {
+                    // Remove the current user from the searched user's followers list
+                    firestore.collection("Users").document(searchedUserId)
+                            .update("followers", FieldValue.arrayRemove(currentUserId))
+                            .addOnSuccessListener(aVoid1 -> {
+                                Toast.makeText(ViewUserProfile.this, "Unfollowed successfully", Toast.LENGTH_SHORT).show();
+                                followButton.setText("Follow");
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("ViewUserProfile", "Error updating followers: " + e.getMessage());
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("ViewUserProfile", "Error updating following: " + e.getMessage());
+                });
+    }
 }

@@ -5,23 +5,23 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ListView;
-import android.app.AlertDialog;
-
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.viewpager.widget.ViewPager;
+import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.firestore.FirebaseFirestore;
-
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements MoodDialogListener {
     private Button addMoodButton;
     private ImageView profileButton, searchButton;
-    private ListView moodListView;
-    private MoodProvider moodProvider;
-    private ArrayList<Mood> moodArrayList;
-    private MoodArrayAdapter moodArrayAdapter;
+    private ViewPager viewPager;
+    private TabLayout tabLayout;
     private String userId;
 
     @Override
@@ -39,48 +39,21 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
             return;
         }
 
+        // Initialize ViewPager and TabLayout
+        viewPager = findViewById(R.id.viewPager);
+        tabLayout = findViewById(R.id.tabLayout);
+        setupViewPager(viewPager);
+        tabLayout.setupWithViewPager(viewPager);
+
+        // Initialize buttons
         addMoodButton = findViewById(R.id.addButton);
         profileButton = findViewById(R.id.profileButton);
         searchButton = findViewById(R.id.searchButton);
-        moodListView = findViewById(R.id.moodList);
 
-        // Create a new MoodProvider for the current user
-        moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
-        moodArrayList = moodProvider.getMoods();
-        moodArrayAdapter = new MoodArrayAdapter(this, moodArrayList);
-        moodListView.setAdapter(moodArrayAdapter);
-
-        moodProvider.listenForUpdates(new MoodProvider.DataStatus() {
-            @Override
-            public void onDataUpdated() {
-                moodArrayAdapter.notifyDataSetChanged();
-            }
-            @Override
-            public void onError(String error) {
-                Log.e("MainActivity", "Error listening for mood updates: " + error);
-            }
-        });
-
+        // Set up button click listeners
         addMoodButton.setOnClickListener(v -> {
             AddMoodFragment addMoodFragment = new AddMoodFragment();
             addMoodFragment.show(getSupportFragmentManager(), "Add Mood");
-        });
-
-        moodListView.setOnItemClickListener((adapterView, view, i, l) -> {
-            Mood mood = moodArrayAdapter.getItem(i);
-            EditMoodFragment editMoodFragment = EditMoodFragment.newInstance(mood);
-            editMoodFragment.show(getSupportFragmentManager(), "Edit Mood");
-        });
-
-        moodListView.setOnItemLongClickListener((adapterView, view, i, l) -> {
-            Mood mood = moodArrayAdapter.getItem(i);
-            new AlertDialog.Builder(MainActivity.this)
-                    .setTitle("Delete Confirmation")
-                    .setMessage("Are you sure you want to delete this mood?")
-                    .setPositiveButton("Yes", (dialog, which) -> moodProvider.deleteMood(mood))
-                    .setNegativeButton("No", null)
-                    .show();
-            return true;
         });
 
         profileButton.setOnClickListener(v -> {
@@ -92,13 +65,63 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         });
     }
 
+    private void setupViewPager(ViewPager viewPager) {
+        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
+        adapter.addFragment(new MoodsFragment(userId), "Moods");
+        adapter.addFragment(new FollowersFragment(userId), "Followers");
+        adapter.addFragment(new FollowingFragment(userId), "Following");
+        viewPager.setAdapter(adapter);
+    }
+
     @Override
     public void AddMood(Mood mood) {
+        MoodProvider moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
         moodProvider.addMood(mood);
     }
 
     @Override
     public void EditMood(Mood mood) {
+        MoodProvider moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
         moodProvider.updateMood(mood);
+    }
+
+    @NonNull
+    @Override
+    public Fragment getItem(int position) {
+        return null;
+    }
+
+    @Override
+    public int getCount() {
+        return 0;
+    }
+
+    static class ViewPagerAdapter extends FragmentPagerAdapter {
+        private final List<Fragment> fragmentList = new ArrayList<>();
+        private final List<String> fragmentTitleList = new ArrayList<>();
+
+        public ViewPagerAdapter(FragmentManager manager) {
+            super(manager);
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+            return fragmentList.get(position);
+        }
+
+        @Override
+        public int getCount() {
+            return fragmentList.size();
+        }
+
+        public void addFragment(Fragment fragment, String title) {
+            fragmentList.add(fragment);
+            fragmentTitleList.add(title);
+        }
+
+        @Override
+        public CharSequence getPageTitle(int position) {
+            return fragmentTitleList.get(position);
+        }
     }
 }

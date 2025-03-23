@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:gravity="center_vertical">
+
+    <!-- Username TextView -->
+    <TextView
+        android:id="@+id/usernameTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Username"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <!-- Unfollow Button -->
+    <Button
+        android:id="@+id/unfollowButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Unfollow"
+        android:backgroundTint="@color/light_blue"
+        android:textColor="@android:color/white"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp" />
+</LinearLayout>
