@@ -16,7 +16,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements MoodDialogListener {
-    private Button addMoodButton;
+    private Button addMoodButton, filterButton;
     private ImageView profileButton, searchButton;
     private ListView moodListView;
     private MoodProvider moodProvider;
@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         profileButton = findViewById(R.id.profileButton);
         searchButton = findViewById(R.id.searchButton);
         moodListView = findViewById(R.id.moodList);
+        filterButton = findViewById(R.id.filterButton);
 
         // Create a new MoodProvider for the current user
         moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
@@ -83,6 +84,10 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
             return true;
         });
 
+        filterButton.setOnClickListener(v -> {
+            showFilterOptions();
+        });
+
         profileButton.setOnClickListener(v -> {
             startActivity(new Intent(MainActivity.this, ProfileActivity.class));
         });
@@ -90,12 +95,70 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         searchButton.setOnClickListener(v -> {
             startActivity(new Intent(MainActivity.this, SearchActivity.class));
         });
+
         Button mapButton = findViewById(R.id.mapButton);
         mapButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, MapActivity.class);
             intent.putExtra("mood_list", moodArrayList); // Pass mood list with location
             startActivity(intent);
         });
+
+    }
+
+    private void showFilterOptions() {
+        String[] options = {"All", "Recent Week", "By Emotion", "By Reason"};
+        new AlertDialog.Builder(this)
+                .setTitle("Filter Moods")
+                .setItems(options, (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            moodProvider.loadAllMoods();
+                            break;
+                        case 1:
+                            moodProvider.filterByRecentWeek();
+                            break;
+                        case 2:
+                            showEmotionFilterDialog();
+                            break;
+                        case 3:
+                            showReasonFilterDialog();
+                            break;
+                    }
+                })
+                .show();
+    }
+
+    private void showEmotionFilterDialog() {
+        Mood.EmotionalState[] values = Mood.EmotionalState.values();
+        String[] emotionNames = new String[values.length];
+        for (int i = 0; i < values.length; i++) {
+            emotionNames[i] = values[i].name();
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Select Emotion")
+                .setItems(emotionNames, (dialog, which) -> {
+                    String selectedEmotion = emotionNames[which];
+                    moodProvider.filterByEmotion(selectedEmotion);
+                })
+                .show();
+    }
+
+    private void showReasonFilterDialog() {
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setHint("Enter keyword");
+
+        new AlertDialog.Builder(this)
+                .setTitle("Filter by Reason")
+                .setView(input)
+                .setPositiveButton("Filter", (dialog, which) -> {
+                    String keyword = input.getText().toString().trim();
+                    if (!keyword.isEmpty()) {
+                        moodProvider.filterByReasonContains(keyword);
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     @Override

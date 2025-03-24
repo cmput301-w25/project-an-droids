@@ -12,11 +12,14 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.InputFilter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
@@ -32,6 +35,7 @@ public class EditMoodFragment extends DialogFragment {
     private MoodDialogListener listener;
     private Spinner emotionSpinner;
     private Spinner socialSituationSpinner;
+    private Spinner privacySpinner;
     private EditText dateEditText;
     private EditText timeEditText;
     private EditText reasonEditText;
@@ -42,7 +46,7 @@ public class EditMoodFragment extends DialogFragment {
     private final Calendar calendar = Calendar.getInstance();
     private static final int REQUEST_IMAGE_GALLERY = 1;
     private static final int REQUEST_IMAGE_CAMERA = 2;
-    private static final int MAX_IMAGE_SIZE = 65536; // 65,536 bytes
+    private static final int MAX_IMAGE_SIZE = 65536;
 
     public static EditMoodFragment newInstance(Mood mood) {
         EditMoodFragment fragment = new EditMoodFragment();
@@ -69,10 +73,13 @@ public class EditMoodFragment extends DialogFragment {
 
         emotionSpinner = view.findViewById(R.id.emotionSpinner);
         socialSituationSpinner = view.findViewById(R.id.socialSituationSpinner);
+        privacySpinner = view.findViewById(R.id.privacySpinner);
         dateEditText = view.findViewById(R.id.dateEditText);
         timeEditText = view.findViewById(R.id.timeEditText);
         reasonEditText = view.findViewById(R.id.reasonEditText);
         selectImage = view.findViewById(R.id.uploadImage);
+
+        reasonEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(200)});
 
         Mood mood = (Mood) getArguments().getSerializable("mood");
         if (mood == null) {
@@ -105,6 +112,15 @@ public class EditMoodFragment extends DialogFragment {
                 break;
             }
         }
+        String privacyDisplay = mood.getPrivacy().name().substring(0, 1).toUpperCase() +
+                mood.getPrivacy().name().substring(1).toLowerCase();
+        for (int i = 0; i < privacySpinner.getAdapter().getCount(); i++) {
+            String item = (String) privacySpinner.getAdapter().getItem(i);
+            if (item.equals(privacyDisplay)) {
+                privacySpinner.setSelection(i);
+                break;
+            }
+        }
 
         dateEditText.setOnClickListener(v -> showDatePickerDialog());
         timeEditText.setOnClickListener(v -> showTimePickerDialog());
@@ -120,7 +136,6 @@ public class EditMoodFragment extends DialogFragment {
                     String reason = reasonEditText.getText().toString();
                     Date newDate = calendar.getTime();
 
-                    // If there's an image, compress it to meet the size limit.
                     if (image != null) {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         int quality = 80;
@@ -133,7 +148,7 @@ public class EditMoodFragment extends DialogFragment {
                             imageBytes = baos.toByteArray();
                         }
                         if (imageBytes.length > MAX_IMAGE_SIZE) {
-                            reasonEditText.setError("Image exceeds maximum size of 65,536 bytes. Please choose a smaller image.");
+                            Toast.makeText(getContext(), "Image exceeds maximum size of 65,536 bytes. Please choose a smaller image.", Toast.LENGTH_LONG).show();
                             return;
                         }
                         image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
@@ -144,6 +159,9 @@ public class EditMoodFragment extends DialogFragment {
                     mood.setReason(reason);
                     mood.setImage(image);
                     mood.setSocialSituation(selectedSocialSituation);
+                    String selectedPrivacyStr = privacySpinner.getSelectedItem().toString();
+                    Mood.Privacy selectedPrivacy = Mood.Privacy.valueOf(selectedPrivacyStr.toUpperCase());
+                    mood.setPrivacy(selectedPrivacy);
                     listener.EditMood(mood);
                 }).create();
     }

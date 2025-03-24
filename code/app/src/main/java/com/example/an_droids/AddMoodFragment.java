@@ -1,5 +1,5 @@
 package com.example.an_droids;
-//
+
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -18,12 +18,7 @@ import android.provider.MediaStore;
 import android.text.InputFilter;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.Spinner;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.*;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -43,12 +38,14 @@ public class AddMoodFragment extends DialogFragment {
     private MoodDialogListener listener;
     private Spinner emotionSpinner;
     private Spinner socialSituationSpinner;
+    private Spinner privacySpinner;
     private EditText reasonEditText;
     private ImageView selectImage;
     private ImageView locationButton;
     private TextView locationText;
     private Bitmap image;
     private Location currentLocation;
+
     private final int REQUEST_IMAGE_GALLERY = 1;
     private final int REQUEST_IMAGE_CAMERA = 2;
     private static final int MAX_IMAGE_SIZE = 65536;
@@ -72,72 +69,64 @@ public class AddMoodFragment extends DialogFragment {
         reasonEditText = view.findViewById(R.id.reasonEditText);
         selectImage = view.findViewById(R.id.uploadImage);
         socialSituationSpinner = view.findViewById(R.id.socialSituationSpinner);
+        privacySpinner = view.findViewById(R.id.privacySpinner);
         locationButton = view.findViewById(R.id.locationButton);
         locationText = view.findViewById(R.id.locationText);
 
-        reasonEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(20)});
+        reasonEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(200)});
         selectImage.setOnClickListener(v -> showImagePickerDialog());
         locationButton.setOnClickListener(v -> fetchLocation());
 
-        AlertDialog dialog = new AlertDialog.Builder(getContext())
-                .setView(view)
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setView(view)
                 .setTitle("Add a Mood")
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Add", null)
-                .create();
+                .setPositiveButton("Add", (dialog, which) -> {
+                    String selectedEmotion = emotionSpinner.getSelectedItem().toString();
+                    String reasonText = reasonEditText.getText().toString().trim();
+                    String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
+                    String selectedPrivacy = privacySpinner.getSelectedItem().toString();
 
-        dialog.setOnShowListener(dialogInterface -> {
-            Button addButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-            addButton.setOnClickListener(v -> {
-                String selectedEmotion = emotionSpinner.getSelectedItem().toString();
-                String reasonText = reasonEditText.getText().toString().trim();
-                String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
-
-                if (reasonText.length() > 20 || reasonText.split("\\s+").length > 3) {
-                    reasonEditText.setError("Max 20 characters or 3 words");
-                    return;
-                }
-
-                if (image != null) {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    int quality = 80;
-                    image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
-                    byte[] imageBytes = baos.toByteArray();
-                    while (imageBytes.length > MAX_IMAGE_SIZE && quality > 10) {
-                        baos.reset();
-                        quality -= 10;
+                    if (image != null) {
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        int quality = 80;
                         image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
-                        imageBytes = baos.toByteArray();
+                        byte[] imageBytes = baos.toByteArray();
+                        while (imageBytes.length > MAX_IMAGE_SIZE && quality > 10) {
+                            baos.reset();
+                            quality -= 10;
+                            image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+                            imageBytes = baos.toByteArray();
+                        }
+
+                        if (imageBytes.length > MAX_IMAGE_SIZE) {
+                            Toast.makeText(getContext(), "Image exceeds 65KB. Use a smaller one.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
                     }
-                    if (imageBytes.length > MAX_IMAGE_SIZE) {
-                        reasonEditText.setError("Image too large. Choose a smaller one.");
-                        return;
+
+                    Mood newMood = new Mood(selectedEmotion, reasonText, null, image, selectedSocialSituation, Mood.Privacy.valueOf(selectedPrivacy));
+
+                    if (currentLocation != null) {
+                        newMood.setLatitude(currentLocation.getLatitude());
+                        newMood.setLongitude(currentLocation.getLongitude());
                     }
-                    image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
-                }
 
-                Mood newMood = new Mood(selectedEmotion, reasonText, null, null, image, selectedSocialSituation);
-                if (currentLocation != null) {
-                    newMood.setLatitude(currentLocation.getLatitude());
-                    newMood.setLongitude(currentLocation.getLongitude());
-                }
+                    if (locationText.getTag() != null) {
+                        newMood.setAddress(locationText.getTag().toString());
+                    }
 
-                // ✅ Save address if present
-                if (locationText.getTag() != null) {
-                    newMood.setAddress(locationText.getTag().toString());
-                }
+                    try {
+                        listener.AddMood(newMood);
+                    } catch (Exception e) {
+                        Toast.makeText(getContext(), "Failed to add mood", Toast.LENGTH_SHORT).show();
+                        e.printStackTrace();
+                    }
+                });
 
-                try {
-                    listener.AddMood(newMood);
-                    dialog.dismiss();
-                } catch (Exception e) {
-                    Toast.makeText(getContext(), "Failed to add mood", Toast.LENGTH_SHORT).show();
-                    e.printStackTrace();
-                }
-            });
-        });
-
-        return dialog;
+        return builder.create();
     }
 
     private void fetchLocation() {
@@ -165,7 +154,6 @@ public class AddMoodFragment extends DialogFragment {
 
                             if (!addresses.isEmpty()) {
                                 Address address = addresses.get(0);
-
                                 StringBuilder addressString = new StringBuilder();
                                 if (address.getThoroughfare() != null)
                                     addressString.append(address.getThoroughfare()).append(" ");
@@ -182,7 +170,7 @@ public class AddMoodFragment extends DialogFragment {
 
                                 String fullAddress = addressString.toString();
                                 locationText.setText(fullAddress);
-                                locationText.setTag(fullAddress); // ✅ Save full address for Add button
+                                locationText.setTag(fullAddress);
                             } else {
                                 locationText.setText("Location: Unknown");
                             }
@@ -241,6 +229,3 @@ public class AddMoodFragment extends DialogFragment {
         }
     }
 }
-
-
-
