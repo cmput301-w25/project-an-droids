@@ -1,5 +1,5 @@
 package com.example.an_droids;
-
+//
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import com.google.firebase.firestore.Blob;
@@ -12,7 +12,6 @@ import java.util.UUID;
 public class Mood implements Serializable {
     private String id;
     private Date timestamp;
-    private String trigger;
     private String socialSituation;
     private String reason;
     @Exclude
@@ -21,6 +20,11 @@ public class Mood implements Serializable {
     public static final String[] SOCIAL_SITUATIONS = {
             "No Selection", "Alone", "With one other person", "With two to several people", "With a crowd"
     };
+    private double latitude;
+    private double longitude;
+    private String address;
+
+
     public enum EmotionalState {
         Anger("😠", "#FF6666"),
         Confusion("😕", "#C19A6B"),
@@ -46,25 +50,22 @@ public class Mood implements Serializable {
     private EmotionalState emotion;
     private Privacy privacy;
     public Mood() {}
-    public Mood(String emotion, String reason, String trigger, Date timestamp, Bitmap image, String socialSituation, Privacy privacy) {
+    public Mood(String emotion, String reason, Date timestamp, Bitmap image, String socialSituation, Privacy privacy) {
         this.id = UUID.randomUUID().toString();
         this.timestamp = (timestamp != null) ? timestamp : new Date();
         this.emotion = EmotionalState.valueOf(emotion);
         this.reason = reason;
-        this.trigger = trigger;
         this.socialSituation = socialSituation;
         this.privacy = privacy;
         setImage(image);
     }
-    public Mood(String emotion, String reason, String trigger, Date timestamp, String socialSituation, Privacy privacy) {
-        this(emotion, reason, trigger, timestamp, null, socialSituation, privacy);
+    public Mood(String emotion, String reason, Date timestamp, String socialSituation, Privacy privacy) {
+        this(emotion, reason, timestamp, null, socialSituation, privacy);
     }
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public Date getTimestamp() { return timestamp; }
     public void setTimestamp(Date timestamp) { this.timestamp = timestamp; }
-    public String getTrigger() { return trigger; }
-    public void setTrigger(String trigger) { this.trigger = trigger; }
     public String getSocialSituation() { return socialSituation; }
     public void setSocialSituation(String socialSituation) { this.socialSituation = socialSituation; }
     public EmotionalState getEmotion() { return emotion; }
@@ -112,4 +113,45 @@ public class Mood implements Serializable {
             image = null;
         }
     }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    @Exclude
+    public String getSocialSituationEmojiLabel() {
+        switch (socialSituation) {
+            case "Alone":
+                return "🧍 Alone";
+            case "With one other person":
+                return "🧑‍🤝‍🧑 With one other";
+            case "With two to several people":
+                return "👨‍👩‍👧 Several people";
+            case "With a crowd":
+                return "👥 Crowd";
+            default:
+                return "❔ No selection";
+        }
+    }
+
 }
