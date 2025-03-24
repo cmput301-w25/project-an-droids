@@ -1,5 +1,5 @@
 package com.example.an_droids;
-
+//
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -94,6 +94,13 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
 
         searchButton.setOnClickListener(v -> {
             startActivity(new Intent(MainActivity.this, SearchActivity.class));
+        });
+
+        Button mapButton = findViewById(R.id.mapButton);
+        mapButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, MapActivity.class);
+            intent.putExtra("mood_list", moodArrayList); // Pass mood list with location
+            startActivity(intent);
         });
 
     }

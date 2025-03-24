@@ -1,5 +1,5 @@
 package com.example.an_droids;
-
+//
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import com.google.firebase.firestore.Blob;
@@ -20,6 +20,11 @@ public class Mood implements Serializable {
     public static final String[] SOCIAL_SITUATIONS = {
             "No Selection", "Alone", "With one other person", "With two to several people", "With a crowd"
     };
+    private double latitude;
+    private double longitude;
+    private String address;
+
+
     public enum EmotionalState {
         Anger("😠", "#FF6666"),
         Confusion("😕", "#C19A6B"),
@@ -107,6 +112,30 @@ public class Mood implements Serializable {
         } else {
             image = null;
         }
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     @Exclude
