@@ -14,14 +14,15 @@
         android:layout_width="100dp"
         android:layout_height="100dp"
         android:src="@android:drawable/ic_menu_gallery"
-        tools:layout_editor_absoluteX="16dp"
-        tools:layout_editor_absoluteY="16dp" />  <!-- Replace with actual default image -->
         android:scaleType="centerCrop"
         android:contentDescription="Profile Picture"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toBottomOf="@+id/followButton"
         android:layout_marginEnd="16dp"/>
+        tools:layout_editor_absoluteX="16dp"
+        tools:layout_editor_absoluteY="16dp" />  <!-- Replace with actual default image -->
+
 
     <!-- Container for Text and Button (Vertical Stack) -->
     <LinearLayout
