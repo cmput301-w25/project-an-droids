@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,6 +13,8 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +26,10 @@ public class ViewUserProfile extends AppCompatActivity {
     private String searchedUserId;
     private String searchedUsername;
     private Button followButton;
+    private MoodProvider moodProvider;
+    private ArrayList<Mood> moodArrayList;
+    private MoodArrayAdapter moodArrayAdapter;
+    private ListView moodListView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +39,8 @@ public class ViewUserProfile extends AppCompatActivity {
         firestore = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
         currentUser = mAuth.getCurrentUser();
+        moodListView = findViewById(R.id.moodListView);
+
 
         // Get the searched user's username from the intent
         searchedUsername = getIntent().getStringExtra("username");
@@ -64,6 +73,9 @@ public class ViewUserProfile extends AppCompatActivity {
                         DocumentSnapshot document = queryDocumentSnapshots.getDocuments().get(0);
                         searchedUserId = document.getId(); // Get the searched user's ID
 
+                        // Load public moods after fetching the user
+                        loadPublicMoods(searchedUserId);
+
                         // Check if the current user is already following the searched user
                         checkIfFollowing();
                     } else {
@@ -74,6 +86,7 @@ public class ViewUserProfile extends AppCompatActivity {
                     Toast.makeText(ViewUserProfile.this, "Failed to load profile", Toast.LENGTH_SHORT).show();
                 });
     }
+
 
     private void checkIfFollowing() {
         if (currentUser == null || searchedUserId == null) {
@@ -168,4 +181,28 @@ public class ViewUserProfile extends AppCompatActivity {
                     Log.e("ViewUserProfile", "Error updating following: " + e.getMessage());
                 });
     }
+
+    private void loadPublicMoods(String userId) {
+        moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
+        moodArrayList = moodProvider.getMoods();  // Get reference to moods list
+        moodArrayAdapter = new MoodArrayAdapter(this, moodArrayList);
+        moodListView.setAdapter(moodArrayAdapter);
+
+        moodProvider.listenForUpdates(new MoodProvider.DataStatus() {
+            @Override
+            public void onDataUpdated() {
+                moodArrayAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(ViewUserProfile.this, "Error: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        moodProvider.loadPublicMoods(searchedUserId);  // Now just calls the method without a callback
+    }
+
+
+
 }

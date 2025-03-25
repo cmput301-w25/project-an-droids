@@ -3,6 +3,7 @@ package com.example.an_droids;
 import android.util.Log;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.Date;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 public class MoodProvider {
     private final ArrayList<Mood> moods;
     private final CollectionReference moodCollection;
+    private DataStatus listener;
 
     public MoodProvider(FirebaseFirestore firestore, String userId) {
         moods = new ArrayList<>();
@@ -27,7 +29,7 @@ public class MoodProvider {
         moodCollection.addSnapshotListener((snapshot, error) -> {
             if (error != null) {
                 Log.e("MoodProvider", "Snapshot listener error: " + error.getMessage());
-                status.onError(error.getMessage());
+                if (listener != null) listener.onError(error.getMessage());
                 return;
             }
 
@@ -38,11 +40,10 @@ public class MoodProvider {
                 }
 
                 sortMoodsByDate();
-                status.onDataUpdated();
+                if (listener != null) listener.onDataUpdated(); // Notify UI
             }
         });
     }
-
 
     public ArrayList<Mood> getMoods() {
         return moods;
@@ -84,8 +85,6 @@ public class MoodProvider {
                 && mood.getPrivacy() != null;
     }
 
-    private DataStatus listener;
-
     public void loadAllMoods() {
         moodCollection.get().addOnSuccessListener(queryDocumentSnapshots -> {
             moods.clear();
@@ -93,7 +92,7 @@ public class MoodProvider {
                 moods.add(doc.toObject(Mood.class));
             }
             sortMoodsByDate();
-            if (listener != null) listener.onDataUpdated();
+            if (listener != null) listener.onDataUpdated(); // Notify UI
         }).addOnFailureListener(e -> {
             if (listener != null) listener.onError(e.getMessage());
         });
@@ -109,7 +108,7 @@ public class MoodProvider {
                         moods.add(doc.toObject(Mood.class));
                     }
                     sortMoodsByDate();
-                    if (listener != null) listener.onDataUpdated();
+                    if (listener != null) listener.onDataUpdated(); // Notify UI
                 })
                 .addOnFailureListener(e -> {
                     if (listener != null) listener.onError(e.getMessage());
@@ -125,7 +124,7 @@ public class MoodProvider {
                         moods.add(doc.toObject(Mood.class));
                     }
                     sortMoodsByDate();
-                    if (listener != null) listener.onDataUpdated();
+                    if (listener != null) listener.onDataUpdated(); // Notify UI
                 })
                 .addOnFailureListener(e -> {
                     if (listener != null) listener.onError(e.getMessage());
@@ -151,12 +150,36 @@ public class MoodProvider {
                         }
                     }
                     sortMoodsByDate();
-                    if (listener != null) listener.onDataUpdated();
+                    if (listener != null) listener.onDataUpdated(); // Notify UI
                 })
                 .addOnFailureListener(e -> {
                     if (listener != null) listener.onError(e.getMessage());
                 });
     }
+
+    public void loadPublicMoods(String userId) {
+        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+
+        // Query the "Moods" collection of the specific user and filter by privacy
+        firestore.collection("Users")
+                .document(userId)  // Reference to the user you're searching for
+                .collection("Moods")  // Moods collection of that user
+                .whereEqualTo("privacy", "PUBLIC")  // Only public moods
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    moods.clear();
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        moods.add(doc.toObject(Mood.class));
+                    }
+                    sortMoodsByDate();
+                    if (listener != null) listener.onDataUpdated();  // Notify UI
+                })
+                .addOnFailureListener(e -> {
+                    if (listener != null) listener.onError(e.getMessage());
+                });
+    }
+
+
 
 
 }
