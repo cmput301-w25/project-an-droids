@@ -14,12 +14,14 @@ import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements MoodDialogListener {
+
     private Button addMoodButton;
     private ImageView profileButton, searchButton;
     private ViewPager viewPager;
@@ -32,12 +34,20 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        userId = getIntent().getStringExtra("userId");
-        if (userId == null) {
-            startActivity(new Intent(MainActivity.this, SignupActivity.class));
+        // 1) Check if a user is currently signed in on this device
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            // No user is signed in, so redirect to LoginActivity
+            startActivity(new Intent(MainActivity.this, LoginActivity.class));
             finish();
             return;
         }
+
+        // 2) If someone is logged in, get the userId from FirebaseAuth
+        userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        // (Optional) If you still want to get the userId from the intent, you can do:
+        // String intentUserId = getIntent().getStringExtra("userId");
+        // But usually, relying on FirebaseAuth is enough.
 
         viewPager = findViewById(R.id.viewPager);
         tabLayout = findViewById(R.id.tabLayout);
@@ -82,6 +92,8 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         moodProvider.updateMood(mood);
     }
 
+    // These methods are overshadowed by implementing `FragmentPagerAdapter` in an Activity;
+    // If you don't actually need them, you can remove them.
     @NonNull
     @Override
     public Fragment getItem(int position) {
