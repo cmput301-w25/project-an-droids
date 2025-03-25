@@ -2,12 +2,8 @@ package com.example.an_droids;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.ListView;
-import android.app.AlertDialog;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -18,6 +14,7 @@ import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
@@ -25,16 +22,10 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements MoodDialogListener {
 
-    private Button addMoodButton, filterButton;
+    private Button addMoodButton;
     private ImageView profileButton, searchButton;
     private ViewPager viewPager;
     private TabLayout tabLayout;
-    private ListView moodListView;
-
-    private MoodProvider moodProvider;
-    private ArrayList<Mood> moodArrayList;
-    private MoodArrayAdapter moodArrayAdapter;
-
     private String userId;
 
     @Override
@@ -43,12 +34,20 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        userId = getIntent().getStringExtra("userId");
-        if (userId == null) {
-            startActivity(new Intent(this, SignupActivity.class));
+        // 1) Check if a user is currently signed in on this device
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            // No user is signed in, so redirect to LoginActivity
+            startActivity(new Intent(MainActivity.this, LoginActivity.class));
             finish();
             return;
         }
+
+        // 2) If someone is logged in, get the userId from FirebaseAuth
+        userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        // (Optional) If you still want to get the userId from the intent, you can do:
+        // String intentUserId = getIntent().getStringExtra("userId");
+        // But usually, relying on FirebaseAuth is enough.
 
         viewPager = findViewById(R.id.viewPager);
         tabLayout = findViewById(R.id.tabLayout);
@@ -58,123 +57,43 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         addMoodButton = findViewById(R.id.addButton);
         profileButton = findViewById(R.id.profileButton);
         searchButton = findViewById(R.id.searchButton);
-        moodListView = findViewById(R.id.moodList);
-        filterButton = findViewById(R.id.filterButton);
 
-        moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
-        moodArrayList = moodProvider.getMoods();
-        moodArrayAdapter = new MoodArrayAdapter(this, moodArrayList);
-        moodListView.setAdapter(moodArrayAdapter);
-
-        moodProvider.listenForUpdates(new MoodProvider.DataStatus() {
-            @Override
-            public void onDataUpdated() {
-                moodArrayAdapter.notifyDataSetChanged();
-            }
-            @Override
-            public void onError(String error) {
-                Log.e("MainActivity", "Error listening for mood updates: " + error);
-            }
+        addMoodButton.setOnClickListener(v -> {
+            AddMoodFragment addMoodFragment = new AddMoodFragment();
+            addMoodFragment.show(getSupportFragmentManager(), "Add Mood");
         });
 
-        addMoodButton.setOnClickListener(v ->
-                new AddMoodFragment().show(getSupportFragmentManager(), "Add Mood")
-        );
-
-        moodListView.setOnItemClickListener((parent, view, position, id) -> {
-            Mood mood = moodArrayAdapter.getItem(position);
-            EditMoodFragment.newInstance(mood)
-                    .show(getSupportFragmentManager(), "Edit Mood");
+        profileButton.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, ProfileActivity.class));
         });
 
-        moodListView.setOnItemLongClickListener((parent, view, position, id) -> {
-            Mood mood = moodArrayAdapter.getItem(position);
-            new AlertDialog.Builder(this)
-                    .setTitle("Delete Confirmation")
-                    .setMessage("Are you sure you want to delete this mood?")
-                    .setPositiveButton("Yes", (dialog, which) -> moodProvider.deleteMood(mood))
-                    .setNegativeButton("No", null)
-                    .show();
-            return true;
-        });
-
-        filterButton.setOnClickListener(v -> showFilterOptions());
-
-        profileButton.setOnClickListener(v ->
-                startActivity(new Intent(this, ProfileActivity.class))
-        );
-        searchButton.setOnClickListener(v ->
-                startActivity(new Intent(this, SearchActivity.class))
-        );
-
-        findViewById(R.id.mapButton).setOnClickListener(v -> {
-            Intent intent = new Intent(this, MapActivity.class);
-            intent.putExtra("mood_list", moodArrayList);
-            startActivity(intent);
+        searchButton.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, SearchActivity.class));
         });
     }
 
     private void setupViewPager(ViewPager viewPager) {
-        ViewPagerAdapter adapter = new ViewPagerAdapter(
-                getSupportFragmentManager(),
-                FragmentPagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT
-        );
-        adapter.addFragment(new MoodsFragment(userId), "Moods");
-        adapter.addFragment(new FollowersFragment(userId), "Followers");
-        adapter.addFragment(new FollowingFragment(userId), "Following");
+        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
+        adapter.addFragment(MoodsFragment.newInstance(userId), "Moods");
+        adapter.addFragment(FollowersFragment.newInstance(userId), "Followers");
+        adapter.addFragment(FollowingFragment.newInstance(userId), "Following");
         viewPager.setAdapter(adapter);
-    }
-
-    private void showFilterOptions() {
-        String[] options = {"All", "Recent Week", "By Emotion", "By Reason"};
-        new AlertDialog.Builder(this)
-                .setTitle("Filter Moods")
-                .setItems(options, (dialog, which) -> {
-                    switch (which) {
-                        case 0: moodProvider.loadAllMoods(); break;
-                        case 1: moodProvider.filterByRecentWeek(); break;
-                        case 2: showEmotionFilterDialog(); break;
-                        case 3: showReasonFilterDialog(); break;
-                    }
-                }).show();
-    }
-
-    private void showEmotionFilterDialog() {
-        Mood.EmotionalState[] values = Mood.EmotionalState.values();
-        String[] emotionNames = new String[values.length];
-        for (int i = 0; i < values.length; i++) emotionNames[i] = values[i].name();
-
-        new AlertDialog.Builder(this)
-                .setTitle("Select Emotion")
-                .setItems(emotionNames, (dialog, which) ->
-                        moodProvider.filterByEmotion(emotionNames[which])
-                ).show();
-    }
-
-    private void showReasonFilterDialog() {
-        EditText input = new EditText(this);
-        input.setHint("Enter keyword");
-        new AlertDialog.Builder(this)
-                .setTitle("Filter by Reason")
-                .setView(input)
-                .setPositiveButton("Filter", (dialog, which) -> {
-                    String keyword = input.getText().toString().trim();
-                    if (!keyword.isEmpty()) moodProvider.filterByReasonContains(keyword);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
     }
 
     @Override
     public void AddMood(Mood mood) {
+        MoodProvider moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
         moodProvider.addMood(mood);
     }
 
     @Override
     public void EditMood(Mood mood) {
+        MoodProvider moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
         moodProvider.updateMood(mood);
     }
 
+    // These methods are overshadowed by implementing `FragmentPagerAdapter` in an Activity;
+    // If you don't actually need them, you can remove them.
     @NonNull
     @Override
     public Fragment getItem(int position) {
@@ -187,32 +106,31 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
     }
 
     static class ViewPagerAdapter extends FragmentPagerAdapter {
-        private final List<Fragment> fragments = new ArrayList<>();
-        private final List<String> titles = new ArrayList<>();
+        private final List<Fragment> fragmentList = new ArrayList<>();
+        private final List<String> fragmentTitleList = new ArrayList<>();
 
-        public ViewPagerAdapter(@NonNull FragmentManager fm, int behavior) {
-            super(fm, behavior);
+        public ViewPagerAdapter(FragmentManager manager) {
+            super(manager);
         }
 
-        @NonNull
         @Override
         public Fragment getItem(int position) {
-            return fragments.get(position);
+            return fragmentList.get(position);
         }
 
         @Override
         public int getCount() {
-            return fragments.size();
+            return fragmentList.size();
         }
 
-        void addFragment(Fragment fragment, String title) {
-            fragments.add(fragment);
-            titles.add(title);
+        public void addFragment(Fragment fragment, String title) {
+            fragmentList.add(fragment);
+            fragmentTitleList.add(title);
         }
 
         @Override
         public CharSequence getPageTitle(int position) {
-            return titles.get(position);
+            return fragmentTitleList.get(position);
         }
     }
 }
