@@ -1,6 +1,5 @@
 package com.example.an_droids;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -21,7 +20,7 @@ import java.util.Map;
 public class ProfileActivity extends AppCompatActivity {
 
     private EditText usernameEditText, emailEditText, dobEditText, locationEditText;
-    private Button saveButton, logoutButton;
+    private Button saveButton;
     private FirebaseAuth mAuth;
     private FirebaseFirestore firestore;
     private FirebaseUser firebaseUser;
@@ -37,7 +36,6 @@ public class ProfileActivity extends AppCompatActivity {
         dobEditText = findViewById(R.id.dobEditText);
         locationEditText = findViewById(R.id.locationEditText);
         saveButton = findViewById(R.id.saveButton);
-        logoutButton = findViewById(R.id.logoutButton);
 
         mAuth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
@@ -51,13 +49,6 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         saveButton.setOnClickListener(v -> updateUserProfile());
-        logoutButton.setOnClickListener(v -> {
-            FirebaseAuth.getInstance().signOut();
-            Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
-            startActivity(intent);
-            finish(); // End the MainActivity so the user can't go back
-        });
-
     }
 
     private void loadUserProfile() {
