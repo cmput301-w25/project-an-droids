@@ -21,6 +21,22 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Initialize FirebaseAuth
+        mAuth = FirebaseAuth.getInstance();
+
+        // 1) If user is already signed in on this device, skip the login screen
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            // Go straight to MainActivity
+            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+            intent.putExtra("userId", currentUser.getUid());
+            startActivity(intent);
+            finish();
+            return; // Important to return here so we don't inflate the layout
+        }
+
+        // 2) Otherwise, show the login layout
         setContentView(R.layout.activity_login);
 
         emailInput = findViewById(R.id.emailInput);
@@ -28,8 +44,7 @@ public class LoginActivity extends AppCompatActivity {
         loginButton = findViewById(R.id.loginButton);
         signupLink = findViewById(R.id.signupLink);
 
-        mAuth = FirebaseAuth.getInstance();
-
+        // 3) Handle login logic
         loginButton.setOnClickListener(v -> {
             String email = emailInput.getText().toString().trim();
             String password = passwordInput.getText().toString();
@@ -56,6 +71,9 @@ public class LoginActivity extends AppCompatActivity {
                     });
         });
 
-        signupLink.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, SignupActivity.class)));
+        // 4) If user doesn’t have an account, send them to signup
+        signupLink.setOnClickListener(v ->
+                startActivity(new Intent(LoginActivity.this, SignupActivity.class))
+        );
     }
 }
