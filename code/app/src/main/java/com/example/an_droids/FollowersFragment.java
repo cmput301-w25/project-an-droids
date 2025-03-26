@@ -13,8 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,8 +37,7 @@ public class FollowersFragment extends Fragment {
     private FirebaseAuth mAuth;
     private FirebaseUser currentUser;
 
-    public FollowersFragment() {
-    }
+    public FollowersFragment() {}
 
     public static FollowersFragment newInstance(String userId) {
         FollowersFragment fragment = new FollowersFragment();
@@ -90,9 +88,25 @@ public class FollowersFragment extends Fragment {
         requestsRecyclerView.setAdapter(requestsAdapter);
         loadFollowers();
         loadRequests();
+      
+        listenToFollowersRealtime();
 
         return view;
     }
+
+    private void listenToFollowersRealtime() {
+        firestore.collection("Users").document(userId)
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null) {
+                        Log.e("FollowersFragment", "Listen failed.", e);
+                        return;
+                    }
+
+                    if (snapshot != null && snapshot.exists()) {
+                        followersList = (List<String>) snapshot.get("followers");
+                        if (followersList == null) followersList = new ArrayList<>();
+                        fetchUsernames(followersList);
+                      
     private void loadFollowers() {
         if (userId == null) return;
 
@@ -105,9 +119,6 @@ public class FollowersFragment extends Fragment {
                         }
                         fetchFollowerUsernames(followersList);
                     }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("FollowersFragment", "Error loading followers: " + e.getMessage());
                 });
     }
 
@@ -134,9 +145,7 @@ public class FollowersFragment extends Fragment {
                             }
                         }
                     })
-                    .addOnFailureListener(e -> {
-                        Log.e("FollowersFragment", "Error fetching follower username: " + e.getMessage());
-                    });
+                    .addOnFailureListener(e -> Log.e("FollowersFragment", "Error fetching username: " + e.getMessage()));
         }
     }
 

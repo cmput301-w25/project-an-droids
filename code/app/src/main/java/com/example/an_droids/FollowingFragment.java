@@ -13,8 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,9 +29,7 @@ public class FollowingFragment extends Fragment {
     private FirebaseAuth mAuth;
     private FirebaseUser currentUser;
 
-    public FollowingFragment() {
-        // Required empty constructor
-    }
+    public FollowingFragment() {}
 
     public static FollowingFragment newInstance(String userId) {
         FollowingFragment fragment = new FollowingFragment();
@@ -63,24 +60,24 @@ public class FollowingFragment extends Fragment {
         mAuth = FirebaseAuth.getInstance();
         currentUser = mAuth.getCurrentUser();
 
-        loadFollowing();
+        listenToFollowingRealtime();
 
         return view;
     }
 
-    private void loadFollowing() {
-        firestore.collection("Users").document(userId).get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        followingList = (List<String>) documentSnapshot.get("following");
-                        if (followingList == null) {
-                            followingList = new ArrayList<>();
-                        }
+    private void listenToFollowingRealtime() {
+        firestore.collection("Users").document(userId)
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null) {
+                        Log.e("FollowingFragment", "Listen failed.", e);
+                        return;
+                    }
+
+                    if (snapshot != null && snapshot.exists()) {
+                        followingList = (List<String>) snapshot.get("following");
+                        if (followingList == null) followingList = new ArrayList<>();
                         fetchUsernames(followingList);
                     }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("FollowingFragment", "Error loading following: " + e.getMessage());
                 });
     }
 
@@ -99,9 +96,7 @@ public class FollowingFragment extends Fragment {
                             }
                         }
                     })
-                    .addOnFailureListener(e -> {
-                        Log.e("FollowingFragment", "Error fetching username: " + e.getMessage());
-                    });
+                    .addOnFailureListener(e -> Log.e("FollowingFragment", "Error fetching username: " + e.getMessage()));
         }
     }
     private void sendFollowRequest(String userIdToFollow) {
@@ -129,10 +124,8 @@ public class FollowingFragment extends Fragment {
                 .addOnSuccessListener(aVoid -> {
                     firestore.collection("Users").document(userIdToUnfollow)
                             .update("followers", FieldValue.arrayRemove(currentUser.getUid()))
-                            .addOnSuccessListener(aVoid1 -> {
-                                Toast.makeText(getContext(), "Unfollowed", Toast.LENGTH_SHORT).show();
-                                loadFollowing();
-                            })
+                            .addOnSuccessListener(aVoid1 ->
+                                    Toast.makeText(getContext(), "Unfollowed", Toast.LENGTH_SHORT).show())
                             .addOnFailureListener(e -> Log.e("FollowingFragment", "Error updating followers: " + e.getMessage()));
                 })
                 .addOnFailureListener(e -> Log.e("FollowingFragment", "Error updating following: " + e.getMessage()));
