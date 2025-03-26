@@ -1,41 +1,41 @@
 package com.example.an_droids;
 
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Toast;
+import android.widget.*;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class ProfileActivity extends AppCompatActivity {
 
-    private EditText usernameEditText, emailEditText, dobEditText, locationEditText;
+    private EditText usernameEditText, emailEditText, dobEditText;
     private Button saveButton, logoutButton;
+
     private FirebaseAuth mAuth;
     private FirebaseFirestore firestore;
     private FirebaseUser firebaseUser;
+
+    private final Calendar calendar = Calendar.getInstance();
+    private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+    private Date selectedDOB;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        // Initialize UI elements
         usernameEditText = findViewById(R.id.usernameEditText);
         emailEditText = findViewById(R.id.emailEditText);
         dobEditText = findViewById(R.id.dobEditText);
-        locationEditText = findViewById(R.id.locationEditText);
         saveButton = findViewById(R.id.saveButton);
         logoutButton = findViewById(R.id.logoutButton);
 
@@ -43,7 +43,6 @@ public class ProfileActivity extends AppCompatActivity {
         firestore = FirebaseFirestore.getInstance();
         firebaseUser = mAuth.getCurrentUser();
 
-        // Disable email editing
         emailEditText.setEnabled(false);
 
         if (firebaseUser != null) {
@@ -53,26 +52,39 @@ public class ProfileActivity extends AppCompatActivity {
         saveButton.setOnClickListener(v -> updateUserProfile());
         logoutButton.setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
-            Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
-            startActivity(intent);
-            finish(); // End the MainActivity so the user can't go back
+            startActivity(new Intent(ProfileActivity.this, LoginActivity.class));
+            finish();
         });
 
+        dobEditText.setOnClickListener(v -> showDatePicker());
+    }
+
+    private void showDatePicker() {
+        new DatePickerDialog(ProfileActivity.this,
+                (view, year, month, dayOfMonth) -> {
+                    calendar.set(Calendar.YEAR, year);
+                    calendar.set(Calendar.MONTH, month);
+                    calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                    selectedDOB = calendar.getTime();
+                    dobEditText.setText(dateFormatter.format(selectedDOB));
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+        ).show();
     }
 
     private void loadUserProfile() {
         firestore.collection("Users").document(firebaseUser.getUid()).get()
                 .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        usernameEditText.setText(documentSnapshot.getString("username"));
-
-                        // Ensure email is displayed correctly
-                        String email = documentSnapshot.contains("email") ?
-                                documentSnapshot.getString("email") : firebaseUser.getEmail();
-                        emailEditText.setText(email);
-
-                        dobEditText.setText(documentSnapshot.getString("dob"));
-                        locationEditText.setText(documentSnapshot.getString("location"));
+                    Users user = documentSnapshot.toObject(Users.class);
+                    if (user != null) {
+                        usernameEditText.setText(user.getUsername());
+                        emailEditText.setText(user.getEmail());
+                        selectedDOB = user.getDob();
+                        if (selectedDOB != null) {
+                            dobEditText.setText(dateFormatter.format(selectedDOB));
+                        }
                     }
                 })
                 .addOnFailureListener(e ->
@@ -86,31 +98,15 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         String newUsername = usernameEditText.getText().toString().trim();
-        String newDOB = dobEditText.getText().toString().trim();
-        String newLocation = locationEditText.getText().toString().trim();
+        String email = emailEditText.getText().toString();
 
-        // Retrieve the current email to prevent overwriting it as null
-        firestore.collection("Users").document(firebaseUser.getUid()).get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        String email = documentSnapshot.contains("email") ?
-                                documentSnapshot.getString("email") : firebaseUser.getEmail();
+        Users updatedUser = new Users(newUsername, email, selectedDOB);
 
-                        Map<String, Object> updatedData = new HashMap<>();
-                        updatedData.put("username", newUsername);
-                        updatedData.put("dob", newDOB);
-                        updatedData.put("location", newLocation);
-                        updatedData.put("email", email); // Preserve email
-
-                        firestore.collection("Users").document(firebaseUser.getUid())
-                                .set(updatedData)
-                                .addOnSuccessListener(aVoid ->
-                                        Toast.makeText(ProfileActivity.this, "Profile Updated", Toast.LENGTH_SHORT).show())
-                                .addOnFailureListener(e ->
-                                        Toast.makeText(ProfileActivity.this, "Failed to update profile", Toast.LENGTH_SHORT).show());
-                    }
-                })
+        firestore.collection("Users").document(firebaseUser.getUid())
+                .set(updatedUser, SetOptions.merge())
+                .addOnSuccessListener(aVoid ->
+                        Toast.makeText(ProfileActivity.this, "Profile Updated", Toast.LENGTH_SHORT).show())
                 .addOnFailureListener(e ->
-                        Toast.makeText(ProfileActivity.this, "Failed to retrieve email", Toast.LENGTH_SHORT).show());
+                        Toast.makeText(ProfileActivity.this, "Failed to update profile", Toast.LENGTH_SHORT).show());
     }
 }

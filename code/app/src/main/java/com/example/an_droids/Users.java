@@ -1,33 +1,35 @@
 package com.example.an_droids;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class Users {
     private String username;
     private String email;
-    private Date DOB;
-    private String location;
+    private Date dob;
     private List<String> followers;
     private List<String> following;
 
-    public Users() {}
+    public Users() {
+        this.followers = new ArrayList<>();
+        this.following = new ArrayList<>();
+    }
 
-    public Users(String username, String email, String location, Date DOB) {
+    public Users(String username, String email, Date dob) {
         this.username = username;
         this.email = email;
-        this.location = location;
-        this.DOB = DOB;
+        this.dob = dob;
+        this.followers = new ArrayList<>();
+        this.following = new ArrayList<>();
     }
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
-    public Date getDOB() { return DOB; }
-    public void setDOB(Date DOB) { this.DOB = DOB; }
-    public String getLocation() { return location; }
-    public void setLocation(String location) { this.location = location; }
+    public Date getDob() { return dob; }
+    public void setDob(Date dob) { this.dob = dob; }
     public List<String> getFollowers() { return followers; }
     public void setFollowers(List<String> followers) { this.followers = followers; }
     public List<String> getFollowing() { return following; }

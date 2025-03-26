@@ -10,14 +10,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class SignupActivity extends AppCompatActivity {
 
-    private EditText usernameInput, emailInput, passwordInput, reenterPasswordInput, dobInput, locationInput;
+    private EditText usernameInput, emailInput, passwordInput, reenterPasswordInput, dobInput;
     private Button signupButton;
     private ImageView avatarImage;
     private TextView loginLink;
@@ -39,7 +39,6 @@ public class SignupActivity extends AppCompatActivity {
         passwordInput = findViewById(R.id.passwordInput);
         reenterPasswordInput = findViewById(R.id.reenterPasswordInput);
         dobInput = findViewById(R.id.dobInput);
-        locationInput = findViewById(R.id.locationInput);
         signupButton = findViewById(R.id.signupButton);
         avatarImage = findViewById(R.id.avatarImage);
         loginLink = findViewById(R.id.loginLink);
@@ -75,10 +74,9 @@ public class SignupActivity extends AppCompatActivity {
         String email = emailInput.getText().toString().trim();
         String password = passwordInput.getText().toString();
         String reenterPassword = reenterPasswordInput.getText().toString();
-        String location = locationInput.getText().toString().trim();
 
         if (username.isEmpty() || email.isEmpty() || password.isEmpty() ||
-                reenterPassword.isEmpty() || dobInput.getText().toString().isEmpty() || location.isEmpty()) {
+                reenterPassword.isEmpty() || dobInput.getText().toString().isEmpty()) {
             Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -88,19 +86,24 @@ public class SignupActivity extends AppCompatActivity {
             return;
         }
 
+        if (password.length() < 6) {
+            Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            Toast.makeText(this, "Invalid email format", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         FirebaseUser firebaseUser = mAuth.getCurrentUser();
                         if (firebaseUser != null) {
-                            Map<String, Object> userMap = new HashMap<>();
-                            userMap.put("username", username);
-                            userMap.put("email", email);
-                            userMap.put("location", location);
-                            userMap.put("dob", dobDate);
-
+                            Users user = new Users(username, email, dobDate);
                             firestore.collection("Users").document(firebaseUser.getUid())
-                                    .set(userMap)
+                                    .set(user, SetOptions.merge())
                                     .addOnSuccessListener(aVoid -> {
                                         Toast.makeText(this, "Sign Up Successful", Toast.LENGTH_SHORT).show();
                                         Intent intent = new Intent(SignupActivity.this, MainActivity.class);
