@@ -16,7 +16,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FollowingFragment extends Fragment {
     private RecyclerView recyclerView;
@@ -82,21 +84,53 @@ public class FollowingFragment extends Fragment {
     }
 
     private void fetchUsernames(List<String> userIds) {
-        followingUsernames.clear();
-        followingUserIds.clear();
-        for (String userId : userIds) {
-            firestore.collection("Users").document(userId).get()
+        Set<String> seenUserIds = new HashSet<>();
+        List<String> tempUsernames = new ArrayList<>();
+        List<String> tempUserIds = new ArrayList<>();
+
+        if (userIds.isEmpty()) {
+            followingUsernames.clear();
+            followingUserIds.clear();
+            followAdapter.updateLists(followingUsernames, followingUserIds);
+            return;
+        }
+
+        final int[] counter = {0};
+        for (String id : userIds) {
+            if (!seenUserIds.add(id)) {
+                counter[0]++;
+                continue;
+            }
+
+            firestore.collection("Users").document(id).get()
                     .addOnSuccessListener(documentSnapshot -> {
                         if (documentSnapshot.exists()) {
                             String username = documentSnapshot.getString("username");
                             if (username != null) {
-                                followingUsernames.add(username);
-                                followingUserIds.add(userId);
-                                followAdapter.updateLists(followingUsernames, followingUserIds);
+                                tempUsernames.add(username);
+                                tempUserIds.add(id);
                             }
                         }
+                        counter[0]++;
+                        if (counter[0] == seenUserIds.size()) {
+                            followingUsernames.clear();
+                            followingUsernames.addAll(tempUsernames);
+                            followingUserIds.clear();
+                            followingUserIds.addAll(tempUserIds);
+                            followAdapter.updateLists(followingUsernames, followingUserIds);
+                        }
                     })
-                    .addOnFailureListener(e -> Log.e("FollowingFragment", "Error fetching username: " + e.getMessage()));
+                    .addOnFailureListener(e -> {
+                        Log.e("FollowingFragment", "Error fetching username: " + e.getMessage());
+                        counter[0]++;
+                        if (counter[0] == seenUserIds.size()) {
+                            followingUsernames.clear();
+                            followingUsernames.addAll(tempUsernames);
+                            followingUserIds.clear();
+                            followingUserIds.addAll(tempUserIds);
+                            followAdapter.updateLists(followingUsernames, followingUserIds);
+                        }
+                    });
         }
     }
     private void sendFollowRequest(String userIdToFollow) {

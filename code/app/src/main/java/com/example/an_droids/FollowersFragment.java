@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -16,7 +17,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FollowersFragment extends Fragment {
     private RecyclerView followersRecyclerView;
@@ -62,9 +65,10 @@ public class FollowersFragment extends Fragment {
         firestore = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
         currentUser = mAuth.getCurrentUser();
+
+        // == Followers RecyclerView ==
         followersRecyclerView = view.findViewById(R.id.followersRecyclerView);
         followersRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-
         followersList = new ArrayList<>();
         followerUsernames = new ArrayList<>();
         followerUserIds = new ArrayList<>();
@@ -74,6 +78,8 @@ public class FollowersFragment extends Fragment {
                 this::removeFollower
         );
         followersRecyclerView.setAdapter(followersAdapter);
+
+        // == Requests RecyclerView ==
         requestsRecyclerView = view.findViewById(R.id.requestsRecyclerView);
         requestsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         requestsList = new ArrayList<>();
@@ -86,14 +92,17 @@ public class FollowersFragment extends Fragment {
                 this::rejectRequest
         );
         requestsRecyclerView.setAdapter(requestsAdapter);
+
         loadFollowers();
         loadRequests();
-      
         listenToFollowersRealtime();
 
         return view;
     }
 
+    /**
+     * Listens for real-time changes on the user's "followers" field.
+     */
     private void listenToFollowersRealtime() {
         firestore.collection("Users").document(userId)
                 .addSnapshotListener((snapshot, e) -> {
@@ -101,12 +110,16 @@ public class FollowersFragment extends Fragment {
                         Log.e("FollowersFragment", "Listen failed.", e);
                         return;
                     }
-
                     if (snapshot != null && snapshot.exists()) {
                         followersList = (List<String>) snapshot.get("followers");
-                        if (followersList == null) followersList = new ArrayList<>();
-                        fetchUsernames(followersList);
-                      
+                        if (followersList == null) {
+                            followersList = new ArrayList<>();
+                        }
+                        fetchFollowerUsernames(followersList);
+                    }
+                });
+    }
+
     private void loadFollowers() {
         if (userId == null) return;
 
@@ -119,33 +132,62 @@ public class FollowersFragment extends Fragment {
                         }
                         fetchFollowerUsernames(followersList);
                     }
-                });
+                })
+                .addOnFailureListener(e ->
+                        Log.e("FollowersFragment", "Error loading followers: " + e.getMessage()));
     }
 
     private void fetchFollowerUsernames(List<String> userIds) {
-        followerUsernames.clear();
-        followerUserIds.clear();
+        // Use a Set to ensure no duplicates
+        Set<String> seenUserIds = new HashSet<>();
+        List<String> tempUsernames = new ArrayList<>();
+        List<String> tempUserIds = new ArrayList<>();
 
-        // If the list is empty, we can update the adapter right away
         if (userIds.isEmpty()) {
+            followerUsernames.clear();
+            followerUserIds.clear();
             followersAdapter.updateLists(followerUsernames, followerUserIds);
             return;
         }
 
+        final int[] counter = {0};
         for (String followerId : userIds) {
+            // Skip duplicate IDs
+            if (!seenUserIds.add(followerId)) {
+                counter[0]++;
+                continue;
+            }
+
             firestore.collection("Users").document(followerId).get()
                     .addOnSuccessListener(documentSnapshot -> {
                         if (documentSnapshot.exists()) {
                             String username = documentSnapshot.getString("username");
                             if (username != null) {
-                                followerUsernames.add(username);
-                                followerUserIds.add(followerId);
-                                // Update adapter each time a new user is fetched
-                                followersAdapter.updateLists(followerUsernames, followerUserIds);
+                                tempUsernames.add(username);
+                                tempUserIds.add(followerId);
                             }
                         }
+                        counter[0]++;
+                        if (counter[0] == seenUserIds.size()) {
+                            // Only update once, after all fetches complete
+                            followerUsernames.clear();
+                            followerUsernames.addAll(tempUsernames);
+                            followerUserIds.clear();
+                            followerUserIds.addAll(tempUserIds);
+                            followersAdapter.updateLists(followerUsernames, followerUserIds);
+                        }
                     })
-                    .addOnFailureListener(e -> Log.e("FollowersFragment", "Error fetching username: " + e.getMessage()));
+                    .addOnFailureListener(e -> {
+                        Log.e("FollowersFragment", "Error fetching username: " + e.getMessage());
+                        counter[0]++;
+                        if (counter[0] == seenUserIds.size()) {
+                            followerUsernames.clear();
+                            followerUsernames.addAll(tempUsernames);
+                            followerUserIds.clear();
+                            followerUserIds.addAll(tempUserIds);
+                            followersAdapter.updateLists(followerUsernames, followerUserIds);
+                        }
+                    });
         }
     }
 
@@ -177,9 +219,8 @@ public class FollowersFragment extends Fragment {
 
     private void loadRequests() {
         if (currentUser == null) return;
-        String currentUserId = currentUser.getUid();
 
-        firestore.collection("Users").document(currentUserId).get()
+        firestore.collection("Users").document(currentUser.getUid()).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
                         requestsList = (List<String>) documentSnapshot.get("followRequests");
@@ -202,6 +243,7 @@ public class FollowersFragment extends Fragment {
             return;
         }
 
+        final int[] counter = {0};
         for (String requesterId : userIds) {
             firestore.collection("Users").document(requesterId).get()
                     .addOnSuccessListener(documentSnapshot -> {
@@ -210,15 +252,23 @@ public class FollowersFragment extends Fragment {
                             if (username != null) {
                                 requestUsernames.add(username);
                                 requestUserIds.add(requesterId);
-                                requestsAdapter.updateLists(requestUsernames, requestUserIds);
                             }
+                        }
+                        counter[0]++;
+                        if (counter[0] == userIds.size()) {
+                            requestsAdapter.updateLists(requestUsernames, requestUserIds);
                         }
                     })
                     .addOnFailureListener(e -> {
                         Log.e("FollowersFragment", "Error fetching request username: " + e.getMessage());
+                        counter[0]++;
+                        if (counter[0] == userIds.size()) {
+                            requestsAdapter.updateLists(requestUsernames, requestUserIds);
+                        }
                     });
         }
     }
+
     private void acceptRequest(int position) {
         if (currentUser == null || requestUserIds == null
                 || position < 0 || position >= requestUserIds.size()) {
@@ -228,22 +278,16 @@ public class FollowersFragment extends Fragment {
         String requesterId = requestUserIds.get(position);
         String myUid = currentUser.getUid();
 
-        // 1) Remove them from my "followRequests"
         firestore.collection("Users").document(myUid)
                 .update("followRequests", FieldValue.arrayRemove(requesterId))
                 .addOnSuccessListener(aVoid -> {
-                    // 2) Add them to my "followers"
                     firestore.collection("Users").document(myUid)
                             .update("followers", FieldValue.arrayUnion(requesterId))
                             .addOnSuccessListener(aVoid2 -> {
-                                // 3) Add me to their "following"
                                 firestore.collection("Users").document(requesterId)
                                         .update("following", FieldValue.arrayUnion(myUid))
                                         .addOnSuccessListener(aVoid3 -> {
-                                            Toast.makeText(getContext(),
-                                                    "Request accepted!",
-                                                    Toast.LENGTH_SHORT).show();
-                                            // Reload so the request disappears immediately
+                                            Toast.makeText(getContext(), "Request accepted!", Toast.LENGTH_SHORT).show();
                                             loadRequests();
                                             loadFollowers();
                                         })
@@ -265,12 +309,10 @@ public class FollowersFragment extends Fragment {
 
         String requesterId = requestUserIds.get(position);
 
-        // Simply remove from my "followRequests"
         firestore.collection("Users").document(currentUser.getUid())
                 .update("followRequests", FieldValue.arrayRemove(requesterId))
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(getContext(), "Request rejected", Toast.LENGTH_SHORT).show();
-                    // Immediately reload so the request disappears from the UI
                     loadRequests();
                 })
                 .addOnFailureListener(e ->
