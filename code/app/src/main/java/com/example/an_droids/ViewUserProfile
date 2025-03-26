@@ -1,0 +1,62 @@
+package com.example.an_droids;
+
+import android.os.Bundle;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+public class ViewUserProfileActivity extends AppCompatActivity {
+    private TextView usernameTextView, emailTextView, dobTextView, locationTextView;
+    private FirebaseFirestore firestore;
+    private String otherUserId; // The ID of the user whose profile we want to view
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_view_user_profile);
+
+        // Hook up UI elements
+        usernameTextView = findViewById(R.id.usernameTextView);
+        emailTextView = findViewById(R.id.emailTextView);
+        dobTextView = findViewById(R.id.dobTextView);
+        locationTextView = findViewById(R.id.locationTextView);
+
+        firestore = FirebaseFirestore.getInstance();
+
+        // Retrieve the otherUserId from the Intent
+        if (getIntent() != null && getIntent().hasExtra("otherUserId")) {
+            otherUserId = getIntent().getStringExtra("otherUserId");
+            loadUserData(otherUserId);
+        } else {
+            Toast.makeText(this, "No user ID provided", Toast.LENGTH_SHORT).show();
+            finish(); // Close if there's no data to show
+        }
+    }
+
+    private void loadUserData(String userId) {
+        // Access the "Users" collection in Firestore
+        DocumentReference userRef = firestore.collection("Users").document(userId);
+        userRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                // Convert the Firestore document into a Users object
+                Users user = documentSnapshot.toObject(Users.class);
+                if (user != null) {
+                    // Display the user’s data
+                    usernameTextView.setText(user.getUsername());
+                    emailTextView.setText(user.getEmail());
+                    dobTextView.setText(user.getDOB());
+                    locationTextView.setText(user.getLocation());
+                }
+            } else {
+                Toast.makeText(ViewUserProfileActivity.this, "User not found.", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }).addOnFailureListener(e ->
+                Toast.makeText(ViewUserProfileActivity.this, "Error loading user: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+        );
+    }
+}

@@ -99,6 +99,20 @@ public class FollowingFragment extends Fragment {
                     .addOnFailureListener(e -> Log.e("FollowingFragment", "Error fetching username: " + e.getMessage()));
         }
     }
+    private void sendFollowRequest(String userIdToFollow) {
+        if (currentUser == null) return;
+        String myUid = currentUser.getUid();
+
+        // Add me (the current user) to the other user's "followRequests" array
+        firestore.collection("Users").document(userIdToFollow)
+                .update("followRequests", FieldValue.arrayUnion(myUid))
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(getContext(), "Follow request sent!", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e ->
+                        Log.e("FollowingFragment", "Error sending follow request: " + e.getMessage()));
+    }
+
 
     private void unfollowUser(int position) {
         if (currentUser == null || followingUserIds == null || position < 0 || position >= followingUserIds.size()) return;
