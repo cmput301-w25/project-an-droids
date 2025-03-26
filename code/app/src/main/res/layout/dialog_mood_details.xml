@@ -92,5 +92,15 @@
             android:textColor="#222222"
             android:textSize="15sp"
             android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/detailLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Location: 📍 Not available"
+            android:textColor="#222222"
+            android:textSize="15sp"
+            android:layout_marginBottom="8dp" />
+
     </LinearLayout>
 </ScrollView>
