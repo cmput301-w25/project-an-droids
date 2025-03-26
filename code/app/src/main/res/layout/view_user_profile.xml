@@ -1,41 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp" >
+    android:padding="16dp"
+    tools:context=".ViewUserProfile">
 
-    <TextView
-        android:id="@+id/usernameTextView"
-        android:layout_width="wrap_content"
+    <!-- Profile Picture -->
+    <ImageView
+        android:id="@+id/profileImageView"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@android:drawable/ic_menu_gallery"
+        android:scaleType="centerCrop"
+        android:contentDescription="Profile Picture"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/followButton"
+        android:layout_marginEnd="16dp"/>
+        tools:layout_editor_absoluteX="16dp"
+        tools:layout_editor_absoluteY="16dp" />  <!-- Replace with actual default image -->
+
+
+    <!-- Container for Text and Button (Vertical Stack) -->
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Username"
-        android:textSize="18sp"
-        android:layout_marginBottom="8dp"/>
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toEndOf="@id/profileImageView"
+        app:layout_constraintTop_toTopOf="@id/profileImageView">
 
-    <TextView
-        android:id="@+id/emailTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Email"
-        android:textSize="18sp"
-        android:layout_marginBottom="8dp"/>
+        <!-- Username -->
+        <TextView
+            android:id="@+id/usernameTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Username"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/dobTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="DOB"
-        android:textSize="18sp"
-        android:layout_marginBottom="8dp"/>
+        <!-- Location -->
+        <TextView
+            android:id="@+id/locationTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Location"
+            android:textSize="16sp" />
 
-    <TextView
-        android:id="@+id/locationTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Location"
-        android:textSize="18sp"
-        android:layout_marginBottom="8dp"/>
+        <!-- Follow Button -->
+        <Button
+            android:id="@+id/followButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Follow" />
+    </LinearLayout>
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

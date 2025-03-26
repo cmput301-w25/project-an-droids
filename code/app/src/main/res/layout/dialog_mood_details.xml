@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true"
+    android:padding="20dp"
+    android:background="@android:color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/detailImage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/image_rounded_bg" />
+
+        <TextView
+            android:id="@+id/detailEmotion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="22sp"
+            android:textColor="#222222"
+            android:text="Emotion"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/detailEmoji"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="😃"
+            android:textSize="26sp"
+            android:layout_marginBottom="20dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Reason:"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:textSize="16sp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/detailReason"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#444444"
+            android:textSize="15sp"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="20dp" />
+
+        <TextView
+            android:id="@+id/detailDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Date"
+            android:textColor="#666666"
+            android:textSize="14sp"
+            android:layout_marginBottom="2dp" />
+
+        <TextView
+            android:id="@+id/detailTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Time"
+            android:textColor="#666666"
+            android:textSize="14sp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/detailSocial"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Social: 👥 With a crowd"
+            android:textColor="#222222"
+            android:textSize="15sp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/detailPrivacy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Privacy: 🔒 Private"
+            android:textColor="#222222"
+            android:textSize="15sp"
+            android:layout_marginBottom="8dp" />
+    </LinearLayout>
+</ScrollView>
