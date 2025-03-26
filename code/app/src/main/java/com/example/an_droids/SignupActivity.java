@@ -59,34 +59,55 @@ public class SignupActivity extends AppCompatActivity {
                 return;
             }
 
-            mAuth.createUserWithEmailAndPassword(email, password)
+            // 1) Check if this username is already taken
+            firestore.collection("Users")
+                    .whereEqualTo("username", username)
+                    .get()
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
-                            FirebaseUser firebaseUser = mAuth.getCurrentUser();
-                            if (firebaseUser != null) {
-                                Users newUser = new Users(username, email, location, dob);
-                                firestore.collection("Users").document(firebaseUser.getUid())
-                                        .set(newUser)
-                                        .addOnSuccessListener(aVoid -> {
-                                            Toast.makeText(SignupActivity.this, "Sign Up Successful", Toast.LENGTH_SHORT).show();
+                            // If the query returned any documents, username is taken
+                            if (!task.getResult().isEmpty()) {
+                                Toast.makeText(SignupActivity.this, "Username already taken", Toast.LENGTH_SHORT).show();
+                            } else {
+                                // 2) If username is unique, proceed with creating the user
+                                mAuth.createUserWithEmailAndPassword(email, password)
+                                        .addOnCompleteListener(authTask -> {
+                                            if (authTask.isSuccessful()) {
+                                                FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                                                if (firebaseUser != null) {
+                                                    Users newUser = new Users(username, email, location, dob);
+                                                    firestore.collection("Users")
+                                                            .document(firebaseUser.getUid())
+                                                            .set(newUser)
+                                                            .addOnSuccessListener(aVoid -> {
+                                                                Toast.makeText(SignupActivity.this, "Sign Up Successful", Toast.LENGTH_SHORT).show();
 
-                                            // Redirect to MainActivity instead of ProfileActivity
-                                            Intent intent = new Intent(SignupActivity.this, MainActivity.class);
-                                            intent.putExtra("userId", firebaseUser.getUid());
-                                            startActivity(intent);
-                                            finish();
-                                        })
-                                        .addOnFailureListener(e ->
-                                                Toast.makeText(SignupActivity.this, "Failed to save user data: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                                        );
+                                                                // Redirect to MainActivity instead of ProfileActivity
+                                                                Intent intent = new Intent(SignupActivity.this, MainActivity.class);
+                                                                intent.putExtra("userId", firebaseUser.getUid());
+                                                                startActivity(intent);
+                                                                finish();
+                                                            })
+                                                            .addOnFailureListener(e ->
+                                                                    Toast.makeText(SignupActivity.this, "Failed to save user data: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                                            );
+                                                }
+                                            } else {
+                                                Toast.makeText(SignupActivity.this, "Sign Up Failed: " + authTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
                             }
                         } else {
-                            Toast.makeText(SignupActivity.this, "Sign Up Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                            // Could not query Firestore for some reason
+                            Toast.makeText(SignupActivity.this,
+                                    "Unable to check username uniqueness: " + task.getException().getMessage(),
+                                    Toast.LENGTH_SHORT).show();
                         }
                     });
         });
 
-        loginLink.setOnClickListener(v -> startActivity(new Intent(SignupActivity.this, LoginActivity.class)));
+        loginLink.setOnClickListener(v -> {
+            startActivity(new Intent(SignupActivity.this, LoginActivity.class));
+        });
     }
 }
-
