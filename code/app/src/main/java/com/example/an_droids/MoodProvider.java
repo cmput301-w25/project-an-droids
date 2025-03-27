@@ -61,7 +61,7 @@ public class MoodProvider {
             docRef.set(mood)
                     .addOnSuccessListener(aVoid -> {
                         Log.d("MoodProvider", "Mood added successfully");
-                        addToMoodLookup(mood.getId(), userId); // Store userId in MoodLookup
+                        addToMoodLookup(mood.getId(), userId, mood); // Store userId in MoodLookup
                     })
                     .addOnFailureListener(e -> Log.e("MoodProvider", "Error adding mood", e));
         } else {
@@ -69,11 +69,14 @@ public class MoodProvider {
         }
     }
 
-    private void addToMoodLookup(String moodId, String userId) {
+    private void addToMoodLookup(String moodId, String userId, Mood mood) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         Map<String, Object> moodLookupEntry = new HashMap<>();
         moodLookupEntry.put("moodId", moodId);
-        moodLookupEntry.put("userId", userId);  // Store userId separately
+        moodLookupEntry.put("userId", userId);
+        moodLookupEntry.put("emotion", mood.getEmotion());  // Store emotion
+        moodLookupEntry.put("timestamp", mood.getTimestamp());  // Store timestamp
+        moodLookupEntry.put("reason", mood.getReason());  // Store reason
 
         db.collection("MoodLookup")
                 .document(moodId)
@@ -82,16 +85,36 @@ public class MoodProvider {
                 .addOnFailureListener(e -> Log.e("MoodProvider", "Failed to update MoodLookup", e));
     }
 
+
     public void updateMood(Mood mood) {
         DocumentReference docRef = moodCollection.document(mood.getId());
+
         if (validMood(mood, docRef)) {
             docRef.set(mood)
-                    .addOnSuccessListener(aVoid -> Log.d("MoodProvider", "Mood updated successfully"))
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d("MoodProvider", "Mood updated successfully");
+                        updateMoodLookup(mood);  // Update MoodLookup after mood update
+                    })
                     .addOnFailureListener(e -> Log.e("MoodProvider", "Error updating mood", e));
         } else {
             throw new IllegalArgumentException("Invalid Mood!");
         }
     }
+
+    private void updateMoodLookup(Mood mood) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Map<String, Object> updatedFields = new HashMap<>();
+        updatedFields.put("emotion", mood.getEmotion());
+        updatedFields.put("timestamp", mood.getTimestamp());
+        updatedFields.put("reason", mood.getReason());
+
+        db.collection("MoodLookup")
+                .document(mood.getId())  // Assuming moodId is the document ID
+                .update(updatedFields)
+                .addOnSuccessListener(aVoid -> Log.d("MoodProvider", "MoodLookup updated"))
+                .addOnFailureListener(e -> Log.e("MoodProvider", "Failed to update MoodLookup", e));
+    }
+
 
     public void deleteMood(Mood mood) {
         DocumentReference docRef = moodCollection.document(mood.getId());
