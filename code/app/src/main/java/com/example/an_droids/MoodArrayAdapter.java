@@ -1,5 +1,5 @@
 package com.example.an_droids;
-//
+
 import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
-
 
 public class MoodArrayAdapter extends ArrayAdapter<Mood> {
     private ArrayList<Mood> moods;
@@ -87,7 +86,6 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         return view;
     }
 
-
     private void showDetailsDialog(Mood mood) {
         View view = LayoutInflater.from(context).inflate(R.layout.dialog_mood_details, null);
 
@@ -117,7 +115,12 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         socialView.setText("Social: " + mood.getSocialSituationEmojiLabel());
         privacyView.setText("Privacy: " + (mood.getPrivacy() == Mood.Privacy.PRIVATE ? "🔒 Private" : "🌍 Public"));
 
-
+        // Set location
+        if (mood.getAddress() != null && !mood.getAddress().isEmpty()) {
+            locationView.setText("Location: 📍 " + mood.getAddress());
+        } else {
+            locationView.setText("Location: 📍 Not available");
+        }
 
         if (mood.getImage() != null) {
             imageView.setImageBitmap(mood.getImage());
@@ -135,7 +138,6 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
                 .setPositiveButton("Close", null)
                 .show();
     }
-
 
     private void followMoodEvent(String moodEventId) {
         FirebaseAuth auth = FirebaseAuth.getInstance();
@@ -171,6 +173,4 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
             }
         });
     }
-
-
 }
