@@ -108,6 +108,5 @@
             android:layout_height="wrap_content"
             android:text="Follow" />
 
-
     </LinearLayout>
 </ScrollView>

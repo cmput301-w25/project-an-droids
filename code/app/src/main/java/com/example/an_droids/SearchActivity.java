@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.inputmethod.EditorInfo;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -14,22 +13,37 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This SearchActivity uses a custom adapter to show usernames + a "Follow" button in the results.
+ * Clicking on the username text opens that user's profile, while clicking on "Follow"
+ * actually sends a follow request.
+ */
 public class SearchActivity extends AppCompatActivity {
 
     private EditText searchEditText;
     private ListView searchResultsListView;
-    private ArrayAdapter<String> searchAdapter;
-    private List<String> allUsernames;   // Stores all usernames from Firestore
-    private List<String> filteredUsernames; // Stores filtered results
+
+    // We'll keep a full list of "UserSearchItem" for all users
+    private List<UserSearchItem> allUsersList;
+    // Then filter them for display
+    private List<UserSearchItem> filteredUsersList;
+
+    // Our custom adapter
+    private UserSearchAdapter searchAdapter;
+
     private FirebaseFirestore firestore;
     private FirebaseAuth mAuth;
-    private String currentUsername = ""; // Store the logged-in username
+    private FirebaseUser firebaseUser;
+
+    private String currentUsername = "";
+    private String currentUserId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,105 +52,212 @@ public class SearchActivity extends AppCompatActivity {
 
         searchEditText = findViewById(R.id.searchEditText);
         searchResultsListView = findViewById(R.id.searchResultsListView);
+
         firestore = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
+        firebaseUser = mAuth.getCurrentUser();
 
-        allUsernames = new ArrayList<>();
-        filteredUsernames = new ArrayList<>();
-        searchAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, filteredUsernames);
+        allUsersList = new ArrayList<>();
+        filteredUsersList = new ArrayList<>();
+
+        // Create our custom adapter
+        searchAdapter = new UserSearchAdapter(filteredUsersList);
         searchResultsListView.setAdapter(searchAdapter);
 
-        // Get the current user's username
+        // 1) Load current user info
         loadCurrentUser();
 
-        // Load all usernames from Firestore
-        loadAllUsernames();
+        // 2) Load all users from Firestore
+        loadAllUsers();
 
-        // Handle text input for search
+        // 3) As user types, filter the list
         searchEditText.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
-
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
             @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                filterUsernames(charSequence.toString().trim());
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                filterUserList(s.toString().trim());
             }
-
             @Override
-            public void afterTextChanged(Editable editable) {}
+            public void afterTextChanged(Editable s) { }
         });
 
-        // Handle "Search" button on keyboard
+        // 4) If user presses "Search" on keyboard
         searchEditText.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                filterUsernames(searchEditText.getText().toString().trim());
+                filterUserList(searchEditText.getText().toString().trim());
                 return true;
             }
             return false;
         });
-
-        // Set the item click listener to navigate to the profile page of clicked user
-        searchResultsListView.setOnItemClickListener((parent, view, position, id) -> {
-            if (position < filteredUsernames.size()) {
-                String clickedUsername = filteredUsernames.get(position);
-
-                // Debugging: Show a toast to confirm the username clicked
-                Toast.makeText(SearchActivity.this, "Opening profile of: " + clickedUsername, Toast.LENGTH_SHORT).show();
-
-                // Ensure clickedUsername is not null
-                if (clickedUsername != null && !clickedUsername.isEmpty()) {
-                    Intent intent = new Intent(SearchActivity.this, ViewUserProfile.class);
-                    intent.putExtra("username", clickedUsername);
-                    startActivity(intent);
-                } else {
-                    Toast.makeText(SearchActivity.this, "Error: No username selected", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-
     }
 
+    /**
+     * Loads the currently logged-in user's details (ID & username).
+     */
     private void loadCurrentUser() {
-        FirebaseUser user = mAuth.getCurrentUser();
-        if (user != null) {
-            firestore.collection("Users").document(user.getUid()).get()
-                    .addOnSuccessListener(documentSnapshot -> {
-                        if (documentSnapshot.exists()) {
-                            currentUsername = documentSnapshot.getString("username");
-                        }
-                    })
-                    .addOnFailureListener(e ->
-                            Toast.makeText(SearchActivity.this, "Failed to load current user", Toast.LENGTH_SHORT).show());
+        if (firebaseUser == null) {
+            Toast.makeText(this, "You must be logged in to search", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
         }
-    }
+        currentUserId = firebaseUser.getUid();
 
-    private void loadAllUsernames() {
-        firestore.collection("Users")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    allUsernames.clear();
-                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                        String username = document.getString("username");
-                        if (username != null) {
-                            allUsernames.add(username); // Store all usernames
-                        }
+        firestore.collection("Users").document(currentUserId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        currentUsername = documentSnapshot.getString("username");
                     }
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(SearchActivity.this, "Failed to load users", Toast.LENGTH_SHORT).show());
+                        Toast.makeText(SearchActivity.this,
+                                "Failed to load current user", Toast.LENGTH_SHORT).show());
     }
 
-    private void filterUsernames(String query) {
-        filteredUsernames.clear();
+    /**
+     * Loads all users from Firestore, storing username & doc ID into allUsersList.
+     */
+    private void loadAllUsers() {
+        firestore.collection("Users")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    allUsersList.clear();
+
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        String uid = doc.getId();
+                        String username = doc.getString("username");
+                        if (username != null && !username.isEmpty()) {
+                            allUsersList.add(new UserSearchItem(username, uid));
+                        }
+                    }
+                    // Once loaded, re-filter with current text
+                    filterUserList(searchEditText.getText().toString().trim());
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(SearchActivity.this,
+                                "Failed to load users", Toast.LENGTH_SHORT).show());
+    }
+
+    /**
+     * Filters out our own username and any user not matching the query.
+     */
+    private void filterUserList(String query) {
+        filteredUsersList.clear();
         if (!query.isEmpty()) {
-            for (String username : allUsernames) {
-                // Exclude the current user from the results
-                if (!username.equalsIgnoreCase(currentUsername) && username.toLowerCase().contains(query.toLowerCase())) {
-                    filteredUsernames.add(username);
+            for (UserSearchItem item : allUsersList) {
+                String username = item.getUsername();
+                if (username.equalsIgnoreCase(currentUsername)) {
+                    // Exclude ourselves from search
+                    continue;
+                }
+                // Check if it contains the query
+                if (username.toLowerCase().contains(query.toLowerCase())) {
+                    filteredUsersList.add(item);
                 }
             }
         }
-
+        // Notify adapter that data changed
         searchAdapter.notifyDataSetChanged();
+    }
+
+    /**
+     * Actually sends a follow request to the target user by updating
+     * their "followRequests" with currentUserId.
+     */
+    private void sendFollowRequest(String targetUserId) {
+        if (currentUserId.isEmpty()) {
+            Toast.makeText(this, "No current user ID found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        firestore.collection("Users")
+                .document(targetUserId)
+                .update("followRequests", FieldValue.arrayUnion(currentUserId))
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(SearchActivity.this,
+                            "Follow request sent!",
+                            Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(SearchActivity.this,
+                            "Error sending request: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    /**
+     * An item in the search list.
+     */
+    private static class UserSearchItem {
+        private final String username;
+        private final String userId;
+
+        public UserSearchItem(String username, String userId) {
+            this.username = username;
+            this.userId = userId;
+        }
+        public String getUsername() { return username; }
+        public String getUserId() { return userId; }
+    }
+
+    /**
+     * A custom adapter that shows:
+     *  - A TextView for username (tap to open that user's profile)
+     *  - A "Follow" button (tap to send request)
+     */
+    private class UserSearchAdapter extends android.widget.BaseAdapter {
+
+        private final List<UserSearchItem> items;
+
+        public UserSearchAdapter(List<UserSearchItem> items) {
+            this.items = items;
+        }
+
+        @Override
+        public int getCount() {
+            return items.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return items.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position; // Not used
+        }
+
+        @Override
+        public android.view.View getView(int position, android.view.View convertView,
+                                         android.view.ViewGroup parent) {
+            if (convertView == null) {
+                // Inflate our custom row layout
+                convertView = getLayoutInflater().inflate(
+                        R.layout.item_search_user, parent, false);
+            }
+
+            UserSearchItem currentItem = items.get(position);
+
+            // Get references
+            android.widget.TextView usernameText = convertView.findViewById(R.id.usernameTextView);
+            android.widget.Button followButton = convertView.findViewById(R.id.followButton);
+
+            // Set data
+            usernameText.setText(currentItem.getUsername());
+
+            // 1) Tapping on the username -> open that user's profile
+            usernameText.setOnClickListener(v -> {
+                Intent intent = new Intent(SearchActivity.this, ViewUserProfile.class);
+                intent.putExtra("username", currentItem.getUsername());
+                startActivity(intent);
+            });
+
+            // 2) Tapping on "Follow" -> send follow request
+            followButton.setOnClickListener(v -> {
+                sendFollowRequest(currentItem.getUserId());
+            });
+
+            return convertView;
+        }
     }
 }

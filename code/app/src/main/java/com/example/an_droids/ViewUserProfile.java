@@ -70,6 +70,7 @@ public class ViewUserProfile extends AppCompatActivity {
 
         followButton = findViewById(R.id.followButton);
 
+
         // Display that username
         usernameTextView.setText(searchedUsername);
 
@@ -144,7 +145,6 @@ public class ViewUserProfile extends AppCompatActivity {
                             updateFollowButtonUI();
                             return;
                         }
-
 
                         // 3) Otherwise, user is not following & no request -> SHOW "Follow"
                         currentState = FollowState.FOLLOW;
@@ -245,7 +245,6 @@ public class ViewUserProfile extends AppCompatActivity {
     }
 
     /**
-
      * Loads the public moods of the searched user.
      */
     private void loadPublicMoods(String userId) {

@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+
 import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.tabs.TabLayout;
@@ -34,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // 1) Check if a user is currently signed in on this device
+        // 1) Check if a user is currently signed in
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
             // No user is signed in, so redirect to LoginActivity
             startActivity(new Intent(MainActivity.this, LoginActivity.class));
@@ -42,32 +43,33 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
             return;
         }
 
-        // 2) If someone is logged in, get the userId from FirebaseAuth
+        // 2) If logged in, get the userId from FirebaseAuth
         userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        // (Optional) If you still want to get the userId from the intent, you can do:
-        // String intentUserId = getIntent().getStringExtra("userId");
-        // But usually, relying on FirebaseAuth is enough.
-
+        // Setup the ViewPager and TabLayout
         viewPager = findViewById(R.id.viewPager);
         tabLayout = findViewById(R.id.tabLayout);
         setupViewPager(viewPager);
         tabLayout.setupWithViewPager(viewPager);
 
+        // Initialize main UI elements
         addMoodButton = findViewById(R.id.addButton);
         profileButton = findViewById(R.id.profileButton);
         searchButton = findViewById(R.id.searchButton);
         FollowedMoodButton = findViewById(R.id.FollowedMoodsButton);
 
+        // Button for adding a new mood
         addMoodButton.setOnClickListener(v -> {
             AddMoodFragment addMoodFragment = new AddMoodFragment();
             addMoodFragment.show(getSupportFragmentManager(), "Add Mood");
         });
 
+        // Go to profile
         profileButton.setOnClickListener(v -> {
             startActivity(new Intent(MainActivity.this, ProfileActivity.class));
         });
 
+        // Go to search
         searchButton.setOnClickListener(v -> {
             startActivity(new Intent(MainActivity.this, SearchActivity.class));
         });
@@ -79,12 +81,16 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
 
     private void setupViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
+        // 1st tab: Moods
         adapter.addFragment(MoodsFragment.newInstance(userId), "Moods");
-        adapter.addFragment(FollowersFragment.newInstance(userId), "Followers");
+        // 2nd tab: Followers + Follow Requests
+        adapter.addFragment(FollowersFragment.newInstance(userId), "Followers/Requests");
+        // 3rd tab: Following
         adapter.addFragment(FollowingFragment.newInstance(userId), "Following");
         viewPager.setAdapter(adapter);
     }
 
+    // MoodDialogListener callbacks
     @Override
     public void AddMood(Mood mood) {
         MoodProvider moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
@@ -97,19 +103,21 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         moodProvider.updateMood(mood);
     }
 
-    // These methods are overshadowed by implementing `FragmentPagerAdapter` in an Activity;
-    // If you don't actually need them, you can remove them.
+    // Required stubs because we're extending FragmentPagerAdapter in the same activity
     @NonNull
     @Override
     public Fragment getItem(int position) {
+        // Not used directly, because we use a custom ViewPagerAdapter
         return null;
     }
 
     @Override
     public int getCount() {
+        // Not used directly, because we use a custom ViewPagerAdapter
         return 0;
     }
 
+    // ViewPagerAdapter as an inner class
     static class ViewPagerAdapter extends FragmentPagerAdapter {
         private final List<Fragment> fragmentList = new ArrayList<>();
         private final List<String> fragmentTitleList = new ArrayList<>();
