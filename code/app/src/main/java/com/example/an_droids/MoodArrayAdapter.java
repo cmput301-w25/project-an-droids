@@ -1,5 +1,5 @@
 package com.example.an_droids;
-
+//
 import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
@@ -100,6 +100,7 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         TextView socialView = view.findViewById(R.id.detailSocial);
         TextView privacyView = view.findViewById(R.id.detailPrivacy);
         Button followButton = view.findViewById(R.id.moodFollowButton);
+        TextView locationView = view.findViewById(R.id.detailLocation);
 
         emotionView.setText(mood.getEmotion().name());
         emojiView.setText(mood.getEmotionEmoji());
@@ -115,6 +116,14 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
 
         socialView.setText("Social: " + mood.getSocialSituationEmojiLabel());
         privacyView.setText("Privacy: " + (mood.getPrivacy() == Mood.Privacy.PRIVATE ? "🔒 Private" : "🌍 Public"));
+
+
+        // 🆕 Set location
+        if (mood.getAddress() != null && !mood.getAddress().isEmpty()) {
+            locationView.setText("Location: 📍 " + mood.getAddress());
+        } else {
+            locationView.setText("Location: 📍 Not available");
+        }
 
         if (mood.getImage() != null) {
             imageView.setImageBitmap(mood.getImage());
