@@ -118,12 +118,6 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         privacyView.setText("Privacy: " + (mood.getPrivacy() == Mood.Privacy.PRIVATE ? "🔒 Private" : "🌍 Public"));
 
 
-        // 🆕 Set location
-        if (mood.getAddress() != null && !mood.getAddress().isEmpty()) {
-            locationView.setText("Location: 📍 " + mood.getAddress());
-        } else {
-            locationView.setText("Location: 📍 Not available");
-        }
 
         if (mood.getImage() != null) {
             imageView.setImageBitmap(mood.getImage());
