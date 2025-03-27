@@ -1,5 +1,5 @@
 package com.example.an_droids;
-
+//
 import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
@@ -121,6 +121,14 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         } else {
             locationView.setText("Location: 📍 Not available");
         }
+
+        // 🆕 Set location
+        if (mood.getAddress() != null && !mood.getAddress().isEmpty()) {
+            locationView.setText("Location: 📍 " + mood.getAddress());
+        } else {
+            locationView.setText("Location: 📍 Not available");
+        }
+
 
         if (mood.getImage() != null) {
             imageView.setImageBitmap(mood.getImage());
