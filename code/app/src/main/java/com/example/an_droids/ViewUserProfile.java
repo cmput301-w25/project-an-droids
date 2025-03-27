@@ -17,7 +17,6 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class ViewUserProfile extends AppCompatActivity {
@@ -48,7 +47,6 @@ public class ViewUserProfile extends AppCompatActivity {
 
     private FollowState currentState = FollowState.FOLLOW;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,7 +58,6 @@ public class ViewUserProfile extends AppCompatActivity {
         currentUser = mAuth.getCurrentUser();
         moodListView = findViewById(R.id.moodListView);
 
-
         // Get the searched username from Intent
         searchedUsername = getIntent().getStringExtra("username");
         if (searchedUsername == null || searchedUsername.isEmpty()) {
@@ -71,7 +68,7 @@ public class ViewUserProfile extends AppCompatActivity {
 
         // Initialize UI elements
         usernameTextView = findViewById(R.id.usernameTextView);
-        followButton     = findViewById(R.id.followButton);
+        followButton = findViewById(R.id.followButton);
 
         // Display that username
         usernameTextView.setText(searchedUsername);
@@ -93,7 +90,6 @@ public class ViewUserProfile extends AppCompatActivity {
                         DocumentSnapshot document = queryDocumentSnapshots.getDocuments().get(0);
                         searchedUserId = document.getId(); // The doc ID of the searched user
 
-
                         // Load public moods after fetching the user
                         loadPublicMoods(searchedUserId);
 
@@ -112,9 +108,7 @@ public class ViewUserProfile extends AppCompatActivity {
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(ViewUserProfile.this,
-                            "Failed to load profile",
-                            Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ViewUserProfile.this, "Failed to load profile", Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -168,9 +162,7 @@ public class ViewUserProfile extends AppCompatActivity {
                 break;
             case REQUESTED:
                 // Already requested – maybe show a toast
-                Toast.makeText(this,
-                        "Your follow request is pending acceptance.",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Your follow request is pending acceptance.", Toast.LENGTH_SHORT).show();
                 break;
             case UNFOLLOW:
                 // If we've already been accepted, let's allow direct "unfollow" logic
@@ -202,9 +194,7 @@ public class ViewUserProfile extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     Log.e("ViewUserProfile", "Error sending request: " + e.getMessage());
-                    Toast.makeText(ViewUserProfile.this,
-                            "Failed to send request",
-                            Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ViewUserProfile.this, "Failed to send request", Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -241,7 +231,9 @@ public class ViewUserProfile extends AppCompatActivity {
                 });
     }
 
-
+    /**
+     * Loads the public moods of the searched user.
+     */
     private void loadPublicMoods(String userId) {
         moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
         moodArrayList = moodProvider.getMoods();  // Get reference to moods list
@@ -263,7 +255,6 @@ public class ViewUserProfile extends AppCompatActivity {
         moodProvider.loadPublicMoods(searchedUserId);  // Now just calls the method without a callback
     }
 
-
     /**
      * Updates the button’s text (and optionally enabled/disabled state) based on currentState.
      */
@@ -280,7 +271,6 @@ public class ViewUserProfile extends AppCompatActivity {
             case REQUESTED:
                 followButton.setVisibility(View.VISIBLE);
                 followButton.setText("Requested");
-                // Could disable so user can’t spam taps
                 followButton.setEnabled(false);
                 break;
             case UNFOLLOW:
@@ -291,4 +281,3 @@ public class ViewUserProfile extends AppCompatActivity {
         }
     }
 }
-
