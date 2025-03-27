@@ -2,9 +2,9 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/viewUserProfileRoot"
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:padding="16dp">
 
     <LinearLayout
@@ -14,8 +14,16 @@
         android:gravity="center_vertical"
         android:layout_marginBottom="16dp">
 
+        <ImageView
+            android:id="@+id/profileImageView"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/ic_launcher_foreground"
+            android:contentDescription="Profile picture"
+            android:layout_marginRight="16dp" />
+
         <TextView
-            android:id="@+id/usernameTextView"
+            android:id="@+id/profileUsernameText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Username"
@@ -27,14 +35,7 @@
             android:id="@+id/followButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Follow"
-            android:layout_marginRight="16dp" />
-
-        <Button
-            android:id="@+id/viewMoodsButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="View Moods" />
+            android:text="Follow" />
     </LinearLayout>
 
     <View
@@ -43,10 +44,9 @@
         android:background="@android:color/darker_gray" />
 
     <ListView
-        android:id="@+id/moodsListView"
+        android:id="@+id/profileMoodsListView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:divider="@android:color/transparent"
-        android:dividerHeight="8dp" />
+        android:layout_height="match_parent"
+        android:dividerHeight="8dp"
+        android:divider="@android:color/transparent" />
 </LinearLayout>

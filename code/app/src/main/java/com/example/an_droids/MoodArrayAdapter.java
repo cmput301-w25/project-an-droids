@@ -17,8 +17,8 @@ import java.util.Date;
 import java.util.Locale;
 
 public class MoodArrayAdapter extends ArrayAdapter<Mood> {
-    private ArrayList<Mood> moods;
-    private Context context;
+    private final ArrayList<Mood> moods;
+    private final Context context;
 
     public MoodArrayAdapter(Context context, ArrayList<Mood> moods) {
         super(context, 0, moods);
@@ -60,7 +60,6 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         }
 
         socialView.setText(mood.getSocialSituationEmojiLabel());
-
         if (mood.getPrivacy() == Mood.Privacy.PRIVATE) {
             privacyView.setText("🔒 Private");
         } else {
@@ -75,16 +74,16 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
     }
 
     private void showDetailsDialog(Mood mood) {
-        View view = LayoutInflater.from(context).inflate(R.layout.dialog_mood_details, null);
+        View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_mood_details, null);
 
-        ImageView imageView = view.findViewById(R.id.detailImage);
-        TextView emojiView = view.findViewById(R.id.detailEmoji);
-        TextView emotionView = view.findViewById(R.id.detailEmotion);
-        TextView reasonView = view.findViewById(R.id.detailReason);
-        TextView dateView = view.findViewById(R.id.detailDate);
-        TextView timeView = view.findViewById(R.id.detailTime);
-        TextView socialView = view.findViewById(R.id.detailSocial);
-        TextView privacyView = view.findViewById(R.id.detailPrivacy);
+        ImageView imageView = dialogView.findViewById(R.id.detailImage);
+        TextView emojiView = dialogView.findViewById(R.id.detailEmoji);
+        TextView emotionView = dialogView.findViewById(R.id.detailEmotion);
+        TextView reasonView = dialogView.findViewById(R.id.detailReason);
+        TextView dateView = dialogView.findViewById(R.id.detailDate);
+        TextView timeView = dialogView.findViewById(R.id.detailTime);
+        TextView socialView = dialogView.findViewById(R.id.detailSocial);
+        TextView privacyView = dialogView.findViewById(R.id.detailPrivacy);
 
         emotionView.setText(mood.getEmotion().name());
         emojiView.setText(mood.getEmotionEmoji());
@@ -99,8 +98,9 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         }
 
         socialView.setText("Social: " + mood.getSocialSituationEmojiLabel());
-        privacyView.setText("Privacy: " + (mood.getPrivacy() == Mood.Privacy.PRIVATE ? "🔒 Private" : "🌍 Public"));
-
+        privacyView.setText(
+                "Privacy: " + (mood.getPrivacy() == Mood.Privacy.PRIVATE ? "🔒 Private" : "🌍 Public")
+        );
 
         if (mood.getImage() != null) {
             imageView.setImageBitmap(mood.getImage());
@@ -110,9 +110,11 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         }
 
         new AlertDialog.Builder(context)
-                .setView(view)
+                .setView(dialogView)
                 .setTitle("Mood Details")
                 .setPositiveButton("Close", null)
                 .show();
     }
 }
+
+
