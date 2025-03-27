@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
     @Override
     public void AddMood(Mood mood) {
         MoodProvider moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
-        moodProvider.addMood(mood);
+        moodProvider.addMood(mood, userId);
     }
 
     @Override

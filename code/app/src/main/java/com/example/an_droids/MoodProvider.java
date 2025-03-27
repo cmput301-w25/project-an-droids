@@ -8,14 +8,18 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.Date;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MoodProvider {
     private final ArrayList<Mood> moods;
     private final CollectionReference moodCollection;
     private DataStatus listener;
+    private final String userId;
 
     public MoodProvider(FirebaseFirestore firestore, String userId) {
         moods = new ArrayList<>();
+        this.userId = userId;
         moodCollection = firestore.collection("Users").document(userId).collection("Moods");
     }
 
@@ -49,16 +53,33 @@ public class MoodProvider {
         return moods;
     }
 
-    public void addMood(Mood mood) {
+    public void addMood(Mood mood, String userId) {
         DocumentReference docRef = moodCollection.document();
         mood.setId(docRef.getId());
+
         if (validMood(mood, docRef)) {
             docRef.set(mood)
-                    .addOnSuccessListener(aVoid -> Log.d("MoodProvider", "Mood added successfully"))
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d("MoodProvider", "Mood added successfully");
+                        addToMoodLookup(mood.getId(), userId); // Store userId in MoodLookup
+                    })
                     .addOnFailureListener(e -> Log.e("MoodProvider", "Error adding mood", e));
         } else {
             throw new IllegalArgumentException("Invalid Mood!");
         }
+    }
+
+    private void addToMoodLookup(String moodId, String userId) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Map<String, Object> moodLookupEntry = new HashMap<>();
+        moodLookupEntry.put("moodId", moodId);
+        moodLookupEntry.put("userId", userId);  // Store userId separately
+
+        db.collection("MoodLookup")
+                .document(moodId)
+                .set(moodLookupEntry)
+                .addOnSuccessListener(aVoid -> Log.d("MoodProvider", "MoodLookup updated"))
+                .addOnFailureListener(e -> Log.e("MoodProvider", "Failed to update MoodLookup", e));
     }
 
     public void updateMood(Mood mood) {
@@ -74,9 +95,21 @@ public class MoodProvider {
 
     public void deleteMood(Mood mood) {
         DocumentReference docRef = moodCollection.document(mood.getId());
+
         docRef.delete()
-                .addOnSuccessListener(aVoid -> Log.d("MoodProvider", "Mood deleted successfully"))
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("MoodProvider", "Mood deleted successfully");
+                    deleteFromMoodLookup(mood.getId()); // Remove from MoodLookup
+                })
                 .addOnFailureListener(e -> Log.e("MoodProvider", "Error deleting mood", e));
+    }
+
+    private void deleteFromMoodLookup(String moodId) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("MoodLookup").document(moodId)
+                .delete()
+                .addOnSuccessListener(aVoid -> Log.d("MoodProvider", "MoodLookup entry deleted"))
+                .addOnFailureListener(e -> Log.e("MoodProvider", "Failed to delete MoodLookup entry", e));
     }
 
     private boolean validMood(Mood mood, DocumentReference docRef) {
