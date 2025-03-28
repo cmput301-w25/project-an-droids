@@ -39,6 +39,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
     private FusedLocationProviderClient fusedLocationProviderClient;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,19 +90,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                 .setTitle("Filter Mood Events")
                 .setItems(options, (dialog, which) -> {
                     switch (which) {
-                        case 0:
-                            showMyMoodEventsOnMap();
-                            break;
-                        case 1:
-                            showFollowingFilterDialog();
-                            break;
-                        case 2:
-                            // Implement nearby logic here
-                            break;
+                        case 0: showMyMoodEventsOnMap(); break;
+                        case 1: showFollowingFilterDialog(); break;
+                        case 2: loadNearbyFollowingMoods(); break;
                     }
-                })
-                .show();
+                }).show();
     }
+
 
     private void showFollowingFilterDialog() {
         String[] filters = {"All", "Recent Week", "By Emotion", "By Reason"};
@@ -171,37 +167,63 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                         FirebaseFirestore.getInstance()
                                 .collection("Users")
                                 .document(userId)
-                                .collection("Moods")
                                 .get()
-                                .addOnSuccessListener(moodsSnapshot -> {
-                                    for (QueryDocumentSnapshot doc : moodsSnapshot) {
-                                        Mood mood = doc.toObject(Mood.class);
-                                        if (mood.getPrivacy() == Mood.Privacy.PUBLIC &&
-                                                mood.getLatitude() != 0 && mood.getLongitude() != 0) {
+                                .addOnSuccessListener(userSnap -> {
+                                    String username = userSnap.getString("username");
 
-                                            boolean shouldAdd = false;
-                                            if ("all".equals(filterType)) {
-                                                shouldAdd = true;
-                                            } else if ("recent".equals(filterType)) {
-                                                shouldAdd = mood.getTimestamp() != null &&
-                                                        mood.getTimestamp().after(new Date(System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000));
-                                            } else if ("emotion".equals(filterType)) {
-                                                shouldAdd = mood.getEmotion().name().equalsIgnoreCase(filterValue);
-                                            } else if ("reason".equals(filterType)) {
-                                                shouldAdd = mood.getReason() != null &&
-                                                        mood.getReason().toLowerCase().contains(filterValue.toLowerCase());
-                                            }
+                                    FirebaseFirestore.getInstance()
+                                            .collection("Users")
+                                            .document(userId)
+                                            .collection("Moods")
+                                            .get()
+                                            .addOnSuccessListener(moodsSnapshot -> {
+                                                for (QueryDocumentSnapshot doc : moodsSnapshot) {
+                                                    Mood mood = doc.toObject(Mood.class);
+                                                    if (mood.getPrivacy() == Mood.Privacy.PUBLIC &&
+                                                            mood.getLatitude() != 0 && mood.getLongitude() != 0) {
 
-                                            if (shouldAdd) {
-                                                LatLng moodLocation = new LatLng(mood.getLatitude(), mood.getLongitude());
-                                                mMap.addMarker(new MarkerOptions()
-                                                        .position(moodLocation)
-                                                        .title(mood.getEmotionEmoji() + " " + mood.getEmotion().name()));
-                                            }
-                                        }
-                                    }
+                                                        boolean shouldAdd = false;
+
+                                                        switch (filterType) {
+                                                            case "all":
+                                                                shouldAdd = true;
+                                                                break;
+                                                            case "recent":
+                                                                if (mood.getTimestamp() != null &&
+                                                                        mood.getTimestamp().after(new Date(System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000))) {
+                                                                    shouldAdd = true;
+                                                                }
+                                                                break;
+                                                            case "emotion":
+                                                                if (mood.getEmotion().name().equalsIgnoreCase(filterValue)) {
+                                                                    shouldAdd = true;
+                                                                }
+                                                                break;
+                                                            case "reason":
+                                                                if (mood.getReason() != null &&
+                                                                        mood.getReason().toLowerCase().contains(filterValue.toLowerCase())) {
+                                                                    shouldAdd = true;
+                                                                }
+                                                                break;
+                                                        }
+
+                                                        if (shouldAdd) {
+                                                            LatLng moodLocation = new LatLng(mood.getLatitude(), mood.getLongitude());
+                                                            String markerTitle = mood.getEmotionEmoji() + " " + mood.getEmotion().name();
+                                                            String markerSnippet = "by " + username;
+
+                                                            mMap.addMarker(new MarkerOptions()
+                                                                    .position(moodLocation)
+                                                                    .title(markerTitle)
+                                                                    .snippet(markerSnippet));
+                                                        }
+                                                    }
+                                                }
+                                            });
                                 });
                     }
+
+
                 });
     }
 
@@ -231,5 +253,74 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                 grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             onMapReady(mMap);
         }
+    }
+
+    private void loadNearbyFollowingMoods() {
+        mMap.clear();
+
+        fusedLocationProviderClient.getLastLocation()
+                .addOnSuccessListener(location -> {
+                    if (location == null) return;
+
+                    double currentLat = location.getLatitude();
+                    double currentLng = location.getLongitude();
+
+                    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                    if (currentUser == null) return;
+
+                    FirebaseFirestore.getInstance()
+                            .collection("Users")
+                            .document(currentUser.getUid())
+                            .get()
+                            .addOnSuccessListener(snapshot -> {
+                                List<String> following = (List<String>) snapshot.get("following");
+                                if (following == null) return;
+
+                                for (String userId : following) {
+                                    FirebaseFirestore.getInstance()
+                                            .collection("Users")
+                                            .document(userId)
+                                            .get()
+                                            .addOnSuccessListener(userSnap -> {
+                                                String username = userSnap.getString("username");
+
+                                                FirebaseFirestore.getInstance()
+                                                        .collection("Users")
+                                                        .document(userId)
+                                                        .collection("Moods")
+                                                        .get()
+                                                        .addOnSuccessListener(moodsSnapshot -> {
+                                                            for (QueryDocumentSnapshot doc : moodsSnapshot) {
+                                                                Mood mood = doc.toObject(Mood.class);
+
+                                                                if (mood.getPrivacy() != Mood.Privacy.PUBLIC) continue;
+                                                                if (mood.getTimestamp() == null) continue;
+                                                                if (mood.getLatitude() == 0 || mood.getLongitude() == 0) continue;
+
+                                                                // Check if within last 7 days
+                                                                long oneWeekAgo = System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000;
+                                                                if (mood.getTimestamp().getTime() < oneWeekAgo) continue;
+
+                                                                // Check distance
+                                                                float[] result = new float[1];
+                                                                Location.distanceBetween(currentLat, currentLng,
+                                                                        mood.getLatitude(), mood.getLongitude(), result);
+
+                                                                if (result[0] <= 5000) { // ≤ 5 km
+                                                                    LatLng moodLocation = new LatLng(mood.getLatitude(), mood.getLongitude());
+                                                                    String title = mood.getEmotionEmoji() + " " + mood.getEmotion().name();
+                                                                    String snippet = "by " + username;
+
+                                                                    mMap.addMarker(new MarkerOptions()
+                                                                            .position(moodLocation)
+                                                                            .title(title)
+                                                                            .snippet(snippet));
+                                                                }
+                                                            }
+                                                        });
+                                            });
+                                }
+                            });
+                });
     }
 }

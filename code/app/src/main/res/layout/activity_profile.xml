@@ -54,16 +54,29 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Save Button (Initially Visible) -->
+
+    <!-- Edit Button (Initially Hidden) -->
+
     <Button
         android:id="@+id/saveButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Save"
-        app:layout_constraintTop_toBottomOf="@id/locationEditText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/locationEditText" />
 
-    <!-- Edit Button (Initially Hidden) -->
+    <Button
+        android:id="@+id/logoutButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Logout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.028"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/locationEditText" />
+
     <Button
         android:id="@+id/editButton"
         android:layout_width="wrap_content"
@@ -73,8 +86,6 @@
         app:layout_constraintTop_toBottomOf="@id/locationEditText"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
-
 
 
 

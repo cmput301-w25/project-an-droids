@@ -2,11 +2,8 @@ package com.example.an_droids;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.Exclude;
-import com.google.firebase.firestore.GeoPoint;
-
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.util.Date;
@@ -17,35 +14,15 @@ public class Mood implements Serializable {
     private Date timestamp;
     private String socialSituation;
     private String reason;
-
     @Exclude
     private transient Bitmap image;
-
     private Blob imageBlob;
-
     public static final String[] SOCIAL_SITUATIONS = {
             "No Selection", "Alone", "With one other person", "With two to several people", "With a crowd"
     };
-
     private double latitude;
     private double longitude;
     private String address;
-
-    private EmotionalState emotion;
-    private Privacy privacy;
-
-    // ✅ NEW FIELD to support filtering in MapActivity
-    private String userId;
-    private GeoPoint location;
-
-    public Object getLocation() {
-        return location;
-    }
-
-    public void setLocation(GeoPoint location) {
-        this.location = location;
-    }
-
 
     public enum EmotionalState {
         Anger("😠", "#FF6666"),
@@ -65,15 +42,22 @@ public class Mood implements Serializable {
             this.colorHex = colorHex;
         }
 
-        public String getEmoji() { return emoji; }
+        public String getEmoji() {
+            return emoji;
+        }
 
-        public String getColorHex() { return colorHex; }
+        public String getColorHex() {
+            return colorHex;
+        }
     }
 
     public enum Privacy {
         PRIVATE,
         PUBLIC
     }
+
+    private EmotionalState emotion;
+    private Privacy privacy;
 
     public Mood() {}
 
@@ -91,33 +75,61 @@ public class Mood implements Serializable {
         this(emotion, reason, timestamp, null, socialSituation, privacy);
     }
 
-    public String getId() { return id; }
+    public String getId() {
+        return id;
+    }
 
-    public void setId(String id) { this.id = id; }
+    public void setId(String id) {
+        this.id = id;
+    }
 
-    public Date getTimestamp() { return timestamp; }
+    public Date getTimestamp() {
+        return timestamp;
+    }
 
-    public void setTimestamp(Date timestamp) { this.timestamp = timestamp; }
+    public void setTimestamp(Date timestamp) {
+        this.timestamp = timestamp;
+    }
 
-    public String getSocialSituation() { return socialSituation; }
+    public String getSocialSituation() {
+        return socialSituation;
+    }
 
-    public void setSocialSituation(String socialSituation) { this.socialSituation = socialSituation; }
+    public void setSocialSituation(String socialSituation) {
+        this.socialSituation = socialSituation;
+    }
 
-    public EmotionalState getEmotion() { return emotion; }
+    public EmotionalState getEmotion() {
+        return emotion;
+    }
 
-    public void setEmotion(String emotion) { this.emotion = EmotionalState.valueOf(emotion); }
+    public void setEmotion(String emotion) {
+        this.emotion = EmotionalState.valueOf(emotion);
+    }
 
-    public String getEmotionEmoji() { return emotion.getEmoji(); }
+    public String getEmotionEmoji() {
+        return emotion.getEmoji();
+    }
 
-    public String getEmotionColorHex() { return emotion.getColorHex(); }
+    public String getEmotionColorHex() {
+        return emotion.getColorHex();
+    }
 
-    public String getReason() { return reason; }
+    public String getReason() {
+        return reason;
+    }
 
-    public void setReason(String reason) { this.reason = reason; }
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
 
-    public void setPrivacy(Privacy privacy) { this.privacy = privacy; }
+    public Privacy getPrivacy() {
+        return privacy;
+    }
 
-    public Privacy getPrivacy() { return privacy; }
+    public void setPrivacy(Privacy privacy) {
+        this.privacy = privacy;
+    }
 
     @Exclude
     public Bitmap getImage() {
@@ -141,7 +153,9 @@ public class Mood implements Serializable {
         }
     }
 
-    public Blob getImageBlob() { return imageBlob; }
+    public Blob getImageBlob() {
+        return imageBlob;
+    }
 
     public void setImageBlob(Blob imageBlob) {
         this.imageBlob = imageBlob;
@@ -153,32 +167,45 @@ public class Mood implements Serializable {
         }
     }
 
-    public double getLatitude() { return latitude; }
+    public double getLatitude() {
+        return latitude;
+    }
 
-    public void setLatitude(double latitude) { this.latitude = latitude; }
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
 
-    public double getLongitude() { return longitude; }
+    public double getLongitude() {
+        return longitude;
+    }
 
-    public void setLongitude(double longitude) { this.longitude = longitude; }
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
 
-    public String getAddress() { return address; }
+    public String getAddress() {
+        return address;
+    }
 
-    public void setAddress(String address) { this.address = address; }
+    public void setAddress(String address) {
+        this.address = address;
+    }
 
     @Exclude
     public String getSocialSituationEmojiLabel() {
         switch (socialSituation) {
-            case "Alone": return "🧍 Alone";
-            case "With one other person": return "🧑‍🤝‍🧑 With one other";
-            case "With two to several people": return "👨‍👩‍👧 Several people";
-            case "With a crowd": return "👥 Crowd";
-            default: return "❔ No selection";
+            case "Alone":
+                return "🧍 Alone";
+            case "With one other person":
+                return "🧑‍🤝‍🧑 With one other";
+            case "With two to several people":
+                return "👨‍👩‍👧 Several people";
+            case "With a crowd":
+                return "👥 Crowd";
+            default:
+                return "❔ No selection";
         }
     }
-
-    // ✅ NEW GETTER & SETTER (used only in MapActivity filtering)
-    public String getUserId() { return userId; }
-
-    public void setUserId(String userId) { this.userId = userId; }
 }
+
 

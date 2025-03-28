@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:fillViewport="true"
@@ -18,17 +19,16 @@
             android:adjustViewBounds="true"
             android:scaleType="fitCenter"
             android:visibility="gone"
-            android:layout_marginBottom="16dp"
-            android:background="@drawable/image_rounded_bg" />
+            android:layout_marginBottom="16dp" />
 
         <TextView
             android:id="@+id/detailEmotion"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="Emotion"
             android:textStyle="bold"
             android:textSize="22sp"
             android:textColor="#222222"
-            android:text="Emotion"
             android:layout_marginBottom="4dp" />
 
         <TextView
@@ -92,5 +92,22 @@
             android:textColor="#222222"
             android:textSize="15sp"
             android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/detailLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Location: 📍 Not available"
+            android:textColor="#222222"
+            android:textSize="15sp"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/moodFollowButton"
+            android:layout_width="138dp"
+            android:layout_height="wrap_content"
+            android:text="Follow" />
+
     </LinearLayout>
 </ScrollView>
+

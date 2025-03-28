@@ -28,7 +28,7 @@
 
         <!-- App Activities -->
         <activity
-            android:name=".SignupActivity"
+            android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -37,10 +37,11 @@
         </activity>
 
         <activity android:name=".MainActivity" android:exported="true"/>
-        <activity android:name=".LoginActivity" android:exported="true"/>
+        <activity android:name=".SignupActivity" android:exported="true"/>
         <activity android:name=".ProfileActivity"/>
         <activity android:name=".SearchActivity"/>
         <activity android:name=".ViewUserProfile"/>
+        <activity android:name=".FollowedMoodActivity"/>
 
         <!-- Add MapActivity -->
         <activity android:name=".MapActivity"/>
