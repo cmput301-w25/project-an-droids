@@ -29,8 +29,8 @@ import java.util.Date;
 import java.util.Locale;
 
 public class MoodArrayAdapter extends ArrayAdapter<Mood> {
-    private ArrayList<Mood> moods;
-    private Context context;
+    private final ArrayList<Mood> moods;
+    private final Context context;
 
     public MoodArrayAdapter(Context context, ArrayList<Mood> moods) {
         super(context, 0, moods);
@@ -72,7 +72,6 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         }
 
         socialView.setText(mood.getSocialSituationEmojiLabel());
-
         if (mood.getPrivacy() == Mood.Privacy.PRIVATE) {
             privacyView.setText("🔒 Private");
         } else {
@@ -87,7 +86,7 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
     }
 
     private void showDetailsDialog(Mood mood) {
-        View view = LayoutInflater.from(context).inflate(R.layout.dialog_mood_details, null);
+        View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_mood_details, null);
 
         ImageView imageView = view.findViewById(R.id.detailImage);
         TextView emojiView = view.findViewById(R.id.detailEmoji);
@@ -113,6 +112,7 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         }
 
         socialView.setText("Social: " + mood.getSocialSituationEmojiLabel());
+
         privacyView.setText("Privacy: " + (mood.getPrivacy() == Mood.Privacy.PRIVATE ? "🔒 Private" : "🌍 Public"));
 
         // Set location
@@ -128,7 +128,6 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         } else {
             locationView.setText("Location: 📍 Not available");
         }
-
 
         // 🆕 Set location
         if (mood.getAddress() != null && !mood.getAddress().isEmpty()) {
@@ -149,7 +148,7 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         followButton.setOnClickListener(v -> followMoodEvent(mood.getId()));
 
         new AlertDialog.Builder(context)
-                .setView(view)
+                .setView(dialogView)
                 .setTitle("Mood Details")
                 .setPositiveButton("Close", null)
                 .show();
@@ -190,3 +189,5 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         });
     }
 }
+
+

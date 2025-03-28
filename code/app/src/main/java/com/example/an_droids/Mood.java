@@ -1,5 +1,5 @@
 package com.example.an_droids;
-//
+
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import com.google.firebase.firestore.Blob;
@@ -24,7 +24,6 @@ public class Mood implements Serializable {
     private double longitude;
     private String address;
 
-
     public enum EmotionalState {
         Anger("😠", "#FF6666"),
         Confusion("😕", "#C19A6B"),
@@ -34,22 +33,34 @@ public class Mood implements Serializable {
         Sadness("😢", "#ADD8E6"),
         Shame("😳", "#FFB6C1"),
         Surprise("😲", "#FFD580");
+
         private final String emoji;
         private final String colorHex;
+
         EmotionalState(String emoji, String colorHex) {
             this.emoji = emoji;
             this.colorHex = colorHex;
         }
-        public String getEmoji() { return emoji; }
-        public String getColorHex() { return colorHex; }
+
+        public String getEmoji() {
+            return emoji;
+        }
+
+        public String getColorHex() {
+            return colorHex;
+        }
     }
+
     public enum Privacy {
         PRIVATE,
         PUBLIC
     }
+
     private EmotionalState emotion;
     private Privacy privacy;
+
     public Mood() {}
+
     public Mood(String emotion, String reason, Date timestamp, Bitmap image, String socialSituation, Privacy privacy) {
         this.id = UUID.randomUUID().toString();
         this.timestamp = (timestamp != null) ? timestamp : new Date();
@@ -59,30 +70,67 @@ public class Mood implements Serializable {
         this.privacy = privacy;
         setImage(image);
     }
+
     public Mood(String emotion, String reason, Date timestamp, String socialSituation, Privacy privacy) {
         this(emotion, reason, timestamp, null, socialSituation, privacy);
     }
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-    public Date getTimestamp() { return timestamp; }
-    public void setTimestamp(Date timestamp) { this.timestamp = timestamp; }
-    public String getSocialSituation() { return socialSituation; }
-    public void setSocialSituation(String socialSituation) { this.socialSituation = socialSituation; }
-    public EmotionalState getEmotion() { return emotion; }
-    public void setEmotion(String emotion) { this.emotion = EmotionalState.valueOf(emotion); }
-    public String getEmotionEmoji() { return emotion.getEmoji(); }
-    public String getEmotionColorHex() { return emotion.getColorHex(); }
-    public String getReason() { return reason; }
 
-    public void setPrivacy(Privacy privacy) {
-        this.privacy = privacy;
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public Date getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Date timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public String getSocialSituation() {
+        return socialSituation;
+    }
+
+    public void setSocialSituation(String socialSituation) {
+        this.socialSituation = socialSituation;
+    }
+
+    public EmotionalState getEmotion() {
+        return emotion;
+    }
+
+    public void setEmotion(String emotion) {
+        this.emotion = EmotionalState.valueOf(emotion);
+    }
+
+    public String getEmotionEmoji() {
+        return emotion.getEmoji();
+    }
+
+    public String getEmotionColorHex() {
+        return emotion.getColorHex();
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 
     public Privacy getPrivacy() {
         return privacy;
     }
 
-    public void setReason(String reason) { this.reason = reason; }
+    public void setPrivacy(Privacy privacy) {
+        this.privacy = privacy;
+    }
+
     @Exclude
     public Bitmap getImage() {
         if (image == null && imageBlob != null) {
@@ -91,6 +139,7 @@ public class Mood implements Serializable {
         }
         return image;
     }
+
     @Exclude
     public void setImage(Bitmap image) {
         this.image = image;
@@ -103,7 +152,11 @@ public class Mood implements Serializable {
             this.imageBlob = null;
         }
     }
-    public Blob getImageBlob() { return imageBlob; }
+
+    public Blob getImageBlob() {
+        return imageBlob;
+    }
+
     public void setImageBlob(Blob imageBlob) {
         this.imageBlob = imageBlob;
         if (imageBlob != null) {
@@ -153,5 +206,5 @@ public class Mood implements Serializable {
                 return "❔ No selection";
         }
     }
-
 }
+
