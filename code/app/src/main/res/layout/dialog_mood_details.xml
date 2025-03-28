@@ -102,6 +102,12 @@
             android:textSize="15sp"
             android:layout_marginBottom="8dp" />
 
+        <Button
+            android:id="@+id/moodFollowButton"
+            android:layout_width="138dp"
+            android:layout_height="wrap_content"
+            android:text="Follow" />
+
     </LinearLayout>
 </ScrollView>
 

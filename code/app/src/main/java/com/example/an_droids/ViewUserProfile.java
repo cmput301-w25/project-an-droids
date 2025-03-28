@@ -33,9 +33,11 @@ public class ViewUserProfile extends AppCompatActivity {
     private Button viewMoodsButton;
     private TextView usernameTextView;
 
-    private ListView moodsListView;
     private ArrayList<Mood> moodList;
     private MoodArrayAdapter moodArrayAdapter;
+    private ListView moodListView;
+
+    private MoodProvider moodProvider;
 
     private enum FollowState {
         FOLLOW,
@@ -55,23 +57,25 @@ public class ViewUserProfile extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         currentUser = mAuth.getCurrentUser();
 
+        usernameTextView = findViewById(R.id.usernameTextView);
+        followButton = findViewById(R.id.followButton);
+        viewMoodsButton = findViewById(R.id.viewMoodsButton);
+        moodListView = findViewById(R.id.moodListView);
+
         searchedUsername = getIntent().getStringExtra("username");
+
         if (searchedUsername == null || searchedUsername.isEmpty()) {
             Toast.makeText(this, "Error: No user found", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        usernameTextView = findViewById(R.id.usernameTextView);
-        followButton     = findViewById(R.id.followButton);
-        viewMoodsButton  = findViewById(R.id.viewMoodsButton);
-        moodsListView    = findViewById(R.id.moodsListView);
+        usernameTextView.setText(searchedUsername);
 
         moodList = new ArrayList<>();
         moodArrayAdapter = new MoodArrayAdapter(this, moodList);
-        moodsListView.setAdapter(moodArrayAdapter);
+        moodListView.setAdapter(moodArrayAdapter);
 
-        usernameTextView.setText(searchedUsername);
         loadUserProfile();
 
         followButton.setOnClickListener(v -> onFollowButtonClicked());
@@ -86,11 +90,14 @@ public class ViewUserProfile extends AppCompatActivity {
                     if (!queryDocumentSnapshots.isEmpty()) {
                         DocumentSnapshot document = queryDocumentSnapshots.getDocuments().get(0);
                         searchedUserId = document.getId();
+
                         if (currentUser != null && searchedUserId.equals(currentUser.getUid())) {
                             currentState = FollowState.OWN_PROFILE;
                             updateFollowButtonUI();
                             return;
                         }
+
+                        loadPublicMoods(searchedUserId);
                         checkRelationshipState();
                     } else {
                         Toast.makeText(ViewUserProfile.this, "User not found", Toast.LENGTH_SHORT).show();
@@ -108,18 +115,17 @@ public class ViewUserProfile extends AppCompatActivity {
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
                         List<String> followers = (List<String>) documentSnapshot.get("followers");
-                        if (followers != null && currentUser != null && followers.contains(currentUser.getUid())) {
-                            currentState = FollowState.UNFOLLOW;
-                            updateFollowButtonUI();
-                            return;
-                        }
                         List<String> requests = (List<String>) documentSnapshot.get("followRequests");
-                        if (requests != null && currentUser != null && requests.contains(currentUser.getUid())) {
+
+                        String currentUid = currentUser.getUid();
+
+                        if (followers != null && followers.contains(currentUid)) {
+                            currentState = FollowState.UNFOLLOW;
+                        } else if (requests != null && requests.contains(currentUid)) {
                             currentState = FollowState.REQUESTED;
-                            updateFollowButtonUI();
-                            return;
+                        } else {
+                            currentState = FollowState.FOLLOW;
                         }
-                        currentState = FollowState.FOLLOW;
                         updateFollowButtonUI();
                     }
                 })
@@ -150,7 +156,9 @@ public class ViewUserProfile extends AppCompatActivity {
             Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show();
             return;
         }
+
         String currentUserId = currentUser.getUid();
+
         firestore.collection("Users").document(searchedUserId)
                 .update("followRequests", FieldValue.arrayUnion(currentUserId))
                 .addOnSuccessListener(aVoid -> {
@@ -169,7 +177,9 @@ public class ViewUserProfile extends AppCompatActivity {
             Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show();
             return;
         }
+
         String currentUserId = currentUser.getUid();
+
         firestore.collection("Users").document(searchedUserId)
                 .update("followers", FieldValue.arrayRemove(currentUserId))
                 .addOnSuccessListener(aVoid -> {
@@ -212,9 +222,30 @@ public class ViewUserProfile extends AppCompatActivity {
         }
     }
 
-    // Loads the 3 latest Moods from the user's subcollection, sorted by timestamp desc
+    private void loadPublicMoods(String userId) {
+        moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
+        moodList = moodProvider.getMoods();
+        moodArrayAdapter = new MoodArrayAdapter(this, moodList);
+        moodListView.setAdapter(moodArrayAdapter);
+
+        moodProvider.listenForUpdates(new MoodProvider.DataStatus() {
+            @Override
+            public void onDataUpdated() {
+                moodArrayAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(ViewUserProfile.this, "Error: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        moodProvider.loadPublicMoods(searchedUserId);
+    }
+
     private void loadThreeLatestMoods() {
         if (searchedUserId == null) return;
+
         firestore.collection("Users")
                 .document(searchedUserId)
                 .collection("Moods")
@@ -223,12 +254,10 @@ public class ViewUserProfile extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     moodList.clear();
-                    if (!querySnapshot.isEmpty()) {
-                        for (var doc : querySnapshot) {
-                            Mood m = doc.toObject(Mood.class);
-                            if (m != null) {
-                                moodList.add(m);
-                            }
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        Mood mood = doc.toObject(Mood.class);
+                        if (mood != null) {
+                            moodList.add(mood);
                         }
                     }
                     moodArrayAdapter.notifyDataSetChanged();

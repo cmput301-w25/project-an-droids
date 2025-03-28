@@ -23,7 +23,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements MoodDialogListener {
 
-    private Button addMoodButton;
+    private Button addMoodButton, FollowedMoodButton;
     private ImageView profileButton, searchButton;
     private ViewPager viewPager;
     private TabLayout tabLayout;
@@ -56,6 +56,7 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         addMoodButton = findViewById(R.id.addButton);
         profileButton = findViewById(R.id.profileButton);
         searchButton = findViewById(R.id.searchButton);
+        FollowedMoodButton = findViewById(R.id.FollowedMoodsButton);
 
         // Button for adding a new mood
         addMoodButton.setOnClickListener(v -> {
@@ -71,6 +72,10 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
         // Go to search
         searchButton.setOnClickListener(v -> {
             startActivity(new Intent(MainActivity.this, SearchActivity.class));
+        });
+
+        FollowedMoodButton.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, FollowedMoodActivity.class));
         });
     }
 
@@ -89,7 +94,7 @@ public class MainActivity extends AppCompatActivity implements MoodDialogListene
     @Override
     public void AddMood(Mood mood) {
         MoodProvider moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
-        moodProvider.addMood(mood);
+        moodProvider.addMood(mood, userId);
     }
 
     @Override
