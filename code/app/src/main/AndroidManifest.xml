@@ -41,6 +41,7 @@
         <activity android:name=".ProfileActivity"/>
         <activity android:name=".SearchActivity"/>
         <activity android:name=".ViewUserProfile"/>
+        <activity android:name=".FollowedMoodActivity"/>
 
         <!-- Add MapActivity -->
         <activity android:name=".MapActivity"/>
