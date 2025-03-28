@@ -1,5 +1,5 @@
 package com.example.an_droids;
-
+//
 import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
@@ -76,14 +76,15 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
     private void showDetailsDialog(Mood mood) {
         View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_mood_details, null);
 
-        ImageView imageView = dialogView.findViewById(R.id.detailImage);
-        TextView emojiView = dialogView.findViewById(R.id.detailEmoji);
-        TextView emotionView = dialogView.findViewById(R.id.detailEmotion);
-        TextView reasonView = dialogView.findViewById(R.id.detailReason);
-        TextView dateView = dialogView.findViewById(R.id.detailDate);
-        TextView timeView = dialogView.findViewById(R.id.detailTime);
-        TextView socialView = dialogView.findViewById(R.id.detailSocial);
-        TextView privacyView = dialogView.findViewById(R.id.detailPrivacy);
+        ImageView imageView = view.findViewById(R.id.detailImage);
+        TextView emojiView = view.findViewById(R.id.detailEmoji);
+        TextView emotionView = view.findViewById(R.id.detailEmotion);
+        TextView reasonView = view.findViewById(R.id.detailReason);
+        TextView dateView = view.findViewById(R.id.detailDate);
+        TextView timeView = view.findViewById(R.id.detailTime);
+        TextView socialView = view.findViewById(R.id.detailSocial);
+        TextView privacyView = view.findViewById(R.id.detailPrivacy);
+        TextView locationView = view.findViewById(R.id.detailLocation);
 
         emotionView.setText(mood.getEmotion().name());
         emojiView.setText(mood.getEmotionEmoji());
@@ -101,6 +102,14 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         privacyView.setText(
                 "Privacy: " + (mood.getPrivacy() == Mood.Privacy.PRIVATE ? "🔒 Private" : "🌍 Public")
         );
+
+        // 🆕 Set location
+        if (mood.getAddress() != null && !mood.getAddress().isEmpty()) {
+            locationView.setText("Location: 📍 " + mood.getAddress());
+        } else {
+            locationView.setText("Location: 📍 Not available");
+        }
+
 
         if (mood.getImage() != null) {
             imageView.setImageBitmap(mood.getImage());
