@@ -27,6 +27,7 @@ import androidx.fragment.app.DialogFragment;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -107,7 +108,12 @@ public class AddMoodFragment extends DialogFragment {
                         image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
                     }
 
+                    // Create a new Mood instance
                     Mood newMood = new Mood(selectedEmotion, reasonText, null, image, selectedSocialSituation, Mood.Privacy.valueOf(selectedPrivacy));
+
+                    // Automatically set the ownerId from the currently logged-in user
+                    String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    newMood.setOwnerId(currentUserId);
 
                     if (currentLocation != null) {
                         newMood.setLatitude(currentLocation.getLatitude());
