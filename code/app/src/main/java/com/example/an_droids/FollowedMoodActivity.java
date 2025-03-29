@@ -4,10 +4,9 @@ import android.app.AlertDialog;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
-import android.widget.ListView;
 import android.widget.EditText;
+import android.widget.ListView;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -37,6 +36,7 @@ public class FollowedMoodActivity extends AppCompatActivity {
         listView = findViewById(R.id.listView);
         filterButton = findViewById(R.id.moodFilterButton);
 
+        // Use the adapter constructor that does NOT require an ownerId.
         adapter = new MoodArrayAdapter(this, followedMoods);
         listView.setAdapter(adapter);
 
@@ -81,6 +81,8 @@ public class FollowedMoodActivity extends AppCompatActivity {
                                         if (moodDoc.exists()) {
                                             Mood mood = moodDoc.toObject(Mood.class);
                                             if (mood != null) {
+                                                // Optionally, if you add a transient ownerId field to Mood,
+                                                // you can do: mood.setOwnerId(followedUserId);
                                                 followedMoods.add(mood);
                                                 allMoods.add(mood); // Add to the allMoods list
                                                 adapter.notifyDataSetChanged();
@@ -99,10 +101,18 @@ public class FollowedMoodActivity extends AppCompatActivity {
                 .setTitle("Filter Moods")
                 .setItems(options, (dialog, which) -> {
                     switch (which) {
-                        case 0: resetAndLoadAllMoods(); break;
-                        case 1: filterByRecentWeek(); break;
-                        case 2: showEmotionFilterDialog(); break;
-                        case 3: showReasonFilterDialog(); break;
+                        case 0:
+                            resetAndLoadAllMoods();
+                            break;
+                        case 1:
+                            filterByRecentWeek();
+                            break;
+                        case 2:
+                            showEmotionFilterDialog();
+                            break;
+                        case 3:
+                            showReasonFilterDialog();
+                            break;
                     }
                 }).show();
     }
@@ -132,7 +142,9 @@ public class FollowedMoodActivity extends AppCompatActivity {
     private void showEmotionFilterDialog() {
         Mood.EmotionalState[] values = Mood.EmotionalState.values();
         String[] emotionNames = new String[values.length];
-        for (int i = 0; i < values.length; i++) emotionNames[i] = values[i].name();
+        for (int i = 0; i < values.length; i++) {
+            emotionNames[i] = values[i].name();
+        }
 
         new AlertDialog.Builder(this)
                 .setTitle("Select Emotion")

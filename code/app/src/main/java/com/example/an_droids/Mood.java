@@ -17,9 +17,13 @@ public class Mood implements Serializable {
     @Exclude
     private transient Bitmap image;
     private Blob imageBlob;
+    // NEW: add ownerId field that will be saved to Firestore
+    private String ownerId;
+
     public static final String[] SOCIAL_SITUATIONS = {
             "No Selection", "Alone", "With one other person", "With two to several people", "With a crowd"
     };
+
     private double latitude;
     private double longitude;
     private String address;
@@ -61,6 +65,7 @@ public class Mood implements Serializable {
 
     public Mood() {}
 
+    // Updated constructor: you can later set the ownerId via setter
     public Mood(String emotion, String reason, Date timestamp, Bitmap image, String socialSituation, Privacy privacy) {
         this.id = UUID.randomUUID().toString();
         this.timestamp = (timestamp != null) ? timestamp : new Date();
@@ -74,6 +79,8 @@ public class Mood implements Serializable {
     public Mood(String emotion, String reason, Date timestamp, String socialSituation, Privacy privacy) {
         this(emotion, reason, timestamp, null, socialSituation, privacy);
     }
+
+    // Getters and setters for all fields ...
 
     public String getId() {
         return id;
@@ -191,6 +198,15 @@ public class Mood implements Serializable {
         this.address = address;
     }
 
+    // NEW: Getter and Setter for ownerId
+    public String getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
+    }
+
     @Exclude
     public String getSocialSituationEmojiLabel() {
         switch (socialSituation) {
@@ -207,4 +223,3 @@ public class Mood implements Serializable {
         }
     }
 }
-

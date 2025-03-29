@@ -108,6 +108,18 @@
             android:layout_height="wrap_content"
             android:text="Follow" />
 
+        <Button
+            android:id="@+id/moodCommentButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Comment" />
+
+        <Button
+            android:id="@+id/moodViewCommentsButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View Comments" />
+
     </LinearLayout>
 </ScrollView>
 
