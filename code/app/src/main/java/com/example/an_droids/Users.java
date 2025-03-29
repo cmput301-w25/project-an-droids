@@ -1,37 +1,71 @@
 package com.example.an_droids;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import com.google.firebase.firestore.Blob;
+import com.google.firebase.firestore.Exclude;
 
-public class Users {
+import java.io.ByteArrayOutputStream;
+import java.io.Serializable;
+import java.util.Date;
+
+public class Users implements Serializable {
     private String username;
     private String email;
     private Date dob;
-    private List<String> followers;
-    private List<String> following;
+    private Blob profileImageBlob;
 
-    public Users() {
-        this.followers = new ArrayList<>();
-        this.following = new ArrayList<>();
-    }
+    @Exclude
+    private transient Bitmap profileBitmap;
+
+    public Users() {}
 
     public Users(String username, String email, Date dob) {
         this.username = username;
         this.email = email;
         this.dob = dob;
-        this.followers = new ArrayList<>();
-        this.following = new ArrayList<>();
     }
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
+
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
     public Date getDob() { return dob; }
     public void setDob(Date dob) { this.dob = dob; }
-    public List<String> getFollowers() { return followers; }
-    public void setFollowers(List<String> followers) { this.followers = followers; }
-    public List<String> getFollowing() { return following; }
-    public void setFollowing(List<String> following) { this.following = following; }
+
+    public Blob getProfileImageBlob() {
+        return profileImageBlob;
+    }
+
+    public void setProfileImageBlob(Blob blob) {
+        this.profileImageBlob = blob;
+        if (blob != null) {
+            byte[] bytes = blob.toBytes();
+            this.profileBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        }
+    }
+
+    @Exclude
+    public Bitmap getProfileBitmap() {
+        if (profileBitmap == null && profileImageBlob != null) {
+            byte[] bytes = profileImageBlob.toBytes();
+            profileBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        }
+        return profileBitmap;
+    }
+
+    @Exclude
+    public void setProfileBitmap(Bitmap bitmap) {
+        this.profileBitmap = bitmap;
+        if (bitmap != null) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos);
+            byte[] bytes = baos.toByteArray();
+            this.profileImageBlob = Blob.fromBytes(bytes);
+        } else {
+            this.profileImageBlob = null;
+        }
+    }
 }

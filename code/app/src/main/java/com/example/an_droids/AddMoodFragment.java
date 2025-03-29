@@ -37,18 +37,15 @@ import java.util.Locale;
 public class AddMoodFragment extends DialogFragment {
 
     private MoodDialogListener listener;
-    private Spinner emotionSpinner;
-    private Spinner socialSituationSpinner;
-    private Spinner privacySpinner;
+    private Spinner emotionSpinner, socialSituationSpinner, privacySpinner;
     private EditText reasonEditText;
-    private ImageView selectImage;
-    private ImageView locationButton;
+    private ImageView selectImage, locationButton;
     private TextView locationText;
     private Bitmap image;
     private Location currentLocation;
 
-    private final int REQUEST_IMAGE_GALLERY = 1;
-    private final int REQUEST_IMAGE_CAMERA = 2;
+    private static final int REQUEST_IMAGE_GALLERY = 1;
+    private static final int REQUEST_IMAGE_CAMERA = 2;
     private static final int MAX_IMAGE_SIZE = 65536;
 
     @Override
@@ -78,70 +75,76 @@ public class AddMoodFragment extends DialogFragment {
         selectImage.setOnClickListener(v -> showImagePickerDialog());
         locationButton.setOnClickListener(v -> fetchLocation());
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setView(view)
+        return new AlertDialog.Builder(getContext())
+                .setView(view)
                 .setTitle("Add a Mood")
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Add", (dialog, which) -> {
-                    String selectedEmotion = emotionSpinner.getSelectedItem().toString();
-                    String reasonText = reasonEditText.getText().toString().trim();
-                    String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
-                    String selectedPrivacy = privacySpinner.getSelectedItem().toString();
+                .setPositiveButton("Add", (dialog, which) -> onSubmit())
+                .create();
+    }
 
-                    if (image != null) {
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        int quality = 80;
-                        image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
-                        byte[] imageBytes = baos.toByteArray();
-                        while (imageBytes.length > MAX_IMAGE_SIZE && quality > 10) {
-                            baos.reset();
-                            quality -= 10;
-                            image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
-                            imageBytes = baos.toByteArray();
-                        }
+    private void onSubmit() {
+        String selectedEmotion = emotionSpinner.getSelectedItem().toString();
+        String reasonText = reasonEditText.getText().toString().trim();
+        String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
+        String selectedPrivacy = privacySpinner.getSelectedItem().toString();
 
-                        if (imageBytes.length > MAX_IMAGE_SIZE) {
-                            Toast.makeText(getContext(), "Image exceeds 65KB. Use a smaller one.", Toast.LENGTH_LONG).show();
-                            return;
-                        }
+        if (reasonText.isEmpty()) {
+            Toast.makeText(getContext(), "Please enter a reason", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-                        image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
-                    }
+        // Compress the image under 65KB if it exists
+        if (image != null) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            int quality = 80;
+            image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+            byte[] imageBytes = baos.toByteArray();
 
-                    // Create a new Mood instance
-                    Mood newMood = new Mood(selectedEmotion, reasonText, null, image, selectedSocialSituation, Mood.Privacy.valueOf(selectedPrivacy));
+            while (imageBytes.length > MAX_IMAGE_SIZE && quality > 10) {
+                baos.reset();
+                quality -= 10;
+                image.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+                imageBytes = baos.toByteArray();
+            }
 
-                    // Automatically set the ownerId from the currently logged-in user
-                    String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                    newMood.setOwnerId(currentUserId);
+            if (imageBytes.length > MAX_IMAGE_SIZE) {
+                Toast.makeText(getContext(), "Image too large. Try smaller one.", Toast.LENGTH_LONG).show();
+                return;
+            }
 
-                    if (currentLocation != null) {
-                        newMood.setLatitude(currentLocation.getLatitude());
-                        newMood.setLongitude(currentLocation.getLongitude());
-                    }
+            image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+        }
 
-                    if (locationText.getTag() != null) {
-                        newMood.setAddress(locationText.getTag().toString());
-                    }
+        // Create Mood object
+        Mood newMood = new Mood(selectedEmotion, reasonText, null, image, selectedSocialSituation, Mood.Privacy.valueOf(selectedPrivacy));
 
-                    try {
-                        listener.AddMood(newMood);
-                    } catch (Exception e) {
-                        Toast.makeText(getContext(), "Failed to add mood", Toast.LENGTH_SHORT).show();
-                        e.printStackTrace();
-                    }
-                });
+        // Add owner ID
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        newMood.setOwnerId(currentUserId);
 
-        return builder.create();
+        if (currentLocation != null) {
+            newMood.setLatitude(currentLocation.getLatitude());
+            newMood.setLongitude(currentLocation.getLongitude());
+        }
+
+        if (locationText.getTag() != null) {
+            newMood.setAddress(locationText.getTag().toString());
+        }
+
+        try {
+            listener.AddMood(newMood);
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Failed to add mood", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+        }
     }
 
     private void fetchLocation() {
         FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
 
-        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(requireActivity(),
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 101);
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 101);
             return;
         }
 
@@ -149,43 +152,30 @@ public class AddMoodFragment extends DialogFragment {
                 .addOnSuccessListener(location -> {
                     if (location != null) {
                         currentLocation = location;
-
                         Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
+
                         try {
-                            List<Address> addresses = geocoder.getFromLocation(
-                                    location.getLatitude(),
-                                    location.getLongitude(),
-                                    1
-                            );
-
+                            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
                             if (!addresses.isEmpty()) {
-                                Address address = addresses.get(0);
-                                StringBuilder addressString = new StringBuilder();
-                                if (address.getThoroughfare() != null)
-                                    addressString.append(address.getThoroughfare()).append(" ");
-                                if (address.getFeatureName() != null)
-                                    addressString.append(address.getFeatureName()).append(", ");
-                                if (address.getLocality() != null)
-                                    addressString.append(address.getLocality()).append(", ");
-                                if (address.getAdminArea() != null)
-                                    addressString.append(address.getAdminArea()).append(", ");
-                                if (address.getPostalCode() != null)
-                                    addressString.append(address.getPostalCode()).append(", ");
-                                if (address.getCountryName() != null)
-                                    addressString.append(address.getCountryName());
+                                Address addr = addresses.get(0);
+                                StringBuilder addressBuilder = new StringBuilder();
 
-                                String fullAddress = addressString.toString();
+                                if (addr.getThoroughfare() != null) addressBuilder.append(addr.getThoroughfare()).append(" ");
+                                if (addr.getFeatureName() != null) addressBuilder.append(addr.getFeatureName()).append(", ");
+                                if (addr.getLocality() != null) addressBuilder.append(addr.getLocality()).append(", ");
+                                if (addr.getAdminArea() != null) addressBuilder.append(addr.getAdminArea()).append(", ");
+                                if (addr.getPostalCode() != null) addressBuilder.append(addr.getPostalCode()).append(", ");
+                                if (addr.getCountryName() != null) addressBuilder.append(addr.getCountryName());
+
+                                String fullAddress = addressBuilder.toString();
                                 locationText.setText(fullAddress);
                                 locationText.setTag(fullAddress);
                             } else {
                                 locationText.setText("Location: Unknown");
                             }
-
                         } catch (IOException e) {
                             locationText.setText("Geocoder failed");
-                            e.printStackTrace();
                         }
-
                     } else {
                         locationText.setText("Location: Unavailable");
                     }
@@ -194,12 +184,11 @@ public class AddMoodFragment extends DialogFragment {
     }
 
     private void showImagePickerDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Select Image")
+        new AlertDialog.Builder(getContext())
+                .setTitle("Select Image")
                 .setItems(new CharSequence[]{"Choose from Gallery", "Take a Picture", "Cancel"}, (dialog, which) -> {
                     if (which == 0) pickImageFromGallery();
                     else if (which == 1) captureImageFromCamera();
-                    else dialog.dismiss();
                 }).show();
     }
 

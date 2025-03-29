@@ -59,6 +59,7 @@ public class FollowedMoodsFragment extends Fragment {
                         adapter.notifyDataSetChanged();
                         return;
                     }
+
                     List<com.google.android.gms.tasks.Task<?>> tasks = new ArrayList<>();
                     ArrayList<Mood> tempList = new ArrayList<>();
 
@@ -74,7 +75,9 @@ public class FollowedMoodsFragment extends Fragment {
                                             if (!qs.isEmpty()) {
                                                 for (var d : qs.getDocuments()) {
                                                     Mood m = d.toObject(Mood.class);
-                                                    if (m != null) tempList.add(m);
+                                                    if (m != null && m.getPrivacy() == Mood.Privacy.PUBLIC) {
+                                                        tempList.add(m);
+                                                    }
                                                 }
                                             }
                                         })
@@ -84,13 +87,9 @@ public class FollowedMoodsFragment extends Fragment {
                     }
 
                     Tasks.whenAllComplete(tasks).addOnSuccessListener(taskList -> {
-                        Collections.sort(tempList, new Comparator<Mood>() {
-                            @Override
-                            public int compare(Mood a, Mood b) {
-                                if (a.getTimestamp() == null || b.getTimestamp() == null) return 0;
-                                // Descending
-                                return b.getTimestamp().compareTo(a.getTimestamp());
-                            }
+                        tempList.sort((a, b) -> {
+                            if (a.getTimestamp() == null || b.getTimestamp() == null) return 0;
+                            return b.getTimestamp().compareTo(a.getTimestamp());
                         });
                         feedList.clear();
                         feedList.addAll(tempList);

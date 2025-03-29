@@ -103,12 +103,6 @@
             android:layout_marginBottom="8dp" />
 
         <Button
-            android:id="@+id/moodFollowButton"
-            android:layout_width="138dp"
-            android:layout_height="wrap_content"
-            android:text="Follow" />
-
-        <Button
             android:id="@+id/moodCommentButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
