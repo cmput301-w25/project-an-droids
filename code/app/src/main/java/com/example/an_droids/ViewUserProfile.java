@@ -73,7 +73,7 @@ public class ViewUserProfile extends AppCompatActivity {
         usernameTextView.setText(searchedUsername);
 
         moodList = new ArrayList<>();
-        moodArrayAdapter = new MoodArrayAdapter(this, moodList);
+        moodArrayAdapter = new MoodArrayAdapter(this, moodList, searchedUserId);
         moodListView.setAdapter(moodArrayAdapter);
 
         loadUserProfile();
