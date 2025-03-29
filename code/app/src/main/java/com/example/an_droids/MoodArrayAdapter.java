@@ -1,5 +1,6 @@
 package com.example.an_droids;
 //
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
@@ -88,6 +89,7 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
     private void showDetailsDialog(Mood mood) {
         View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_mood_details, null);
 
+        Activity view = null;
         ImageView imageView = view.findViewById(R.id.detailImage);
         TextView emojiView = view.findViewById(R.id.detailEmoji);
         TextView emotionView = view.findViewById(R.id.detailEmotion);
