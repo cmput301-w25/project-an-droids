@@ -9,9 +9,10 @@ import android.widget.ListView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,8 +20,8 @@ import java.util.List;
 public class FollowedMoodActivity extends AppCompatActivity {
     private ListView listView;
     private MoodArrayAdapter adapter;
-    private ArrayList<Mood> followedMoods = new ArrayList<>();
-    private ArrayList<Mood> allMoods = new ArrayList<>();  // Store the original followed moods
+    private final ArrayList<Mood> followedMoods = new ArrayList<>();
+    private final ArrayList<Mood> allMoods = new ArrayList<>();
     private FirebaseFirestore db;
     private String userId;
     private Button filterButton;
@@ -36,7 +37,6 @@ public class FollowedMoodActivity extends AppCompatActivity {
         listView = findViewById(R.id.listView);
         filterButton = findViewById(R.id.moodFilterButton);
 
-        // Use the adapter constructor that does NOT require an ownerId.
         adapter = new MoodArrayAdapter(this, followedMoods);
         listView.setAdapter(adapter);
 
@@ -48,51 +48,50 @@ public class FollowedMoodActivity extends AppCompatActivity {
     private void loadFollowedMoods() {
         db.collection("Users").document(userId).get()
                 .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists() && documentSnapshot.contains("followedMoods")) {
-                        List<String> followedMoodsIds = (List<String>) documentSnapshot.get("followedMoods");
-
-                        if (followedMoodsIds != null && !followedMoodsIds.isEmpty()) {
-                            fetchMoods(followedMoodsIds);
+                    if (documentSnapshot.exists()) {
+                        List<String> following = (List<String>) documentSnapshot.get("following");
+                        if (following != null && !following.isEmpty()) {
+                            fetchMoodsFromFollowedUsers(following);
                         } else {
-                            Log.d("FollowedMoodActivity", "No followed moods found.");
+                            Log.d("FollowedMoodActivity", "User is not following anyone.");
                         }
                     }
                 })
-                .addOnFailureListener(e -> Log.e("FollowedMoodActivity", "Error loading followed moods", e));
+                .addOnFailureListener(e ->
+                        Log.e("FollowedMoodActivity", "Failed to load user doc", e));
     }
 
-    private void fetchMoods(List<String> moodIds) {
-        db.collection("MoodLookup")
-                .whereIn("moodId", moodIds)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    followedMoods.clear();
-                    allMoods.clear();  // Clear the allMoods list
+    private void fetchMoodsFromFollowedUsers(List<String> followedUserIds) {
+        followedMoods.clear();
+        allMoods.clear();
 
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        String moodId = doc.getString("moodId");
-                        String followedUserId = doc.getString("userId");
+        List<Task<QuerySnapshot>> tasks = new ArrayList<>();
 
-                        if (followedUserId != null) {
-                            db.collection("Users").document(followedUserId)
-                                    .collection("Moods").document(moodId)
-                                    .get()
-                                    .addOnSuccessListener(moodDoc -> {
-                                        if (moodDoc.exists()) {
-                                            Mood mood = moodDoc.toObject(Mood.class);
-                                            if (mood != null) {
-                                                // Optionally, if you add a transient ownerId field to Mood,
-                                                // you can do: mood.setOwnerId(followedUserId);
-                                                followedMoods.add(mood);
-                                                allMoods.add(mood); // Add to the allMoods list
-                                                adapter.notifyDataSetChanged();
-                                            }
-                                        }
-                                    });
-                        }
+        for (String followedUserId : followedUserIds) {
+            Task<QuerySnapshot> task = db.collection("Users")
+                    .document(followedUserId)
+                    .collection("Moods")
+                    .whereEqualTo("privacy", Mood.Privacy.PUBLIC.name()) // 💡 Only PUBLIC
+                    .get();
+
+            task.addOnSuccessListener(snapshot -> {
+                for (QueryDocumentSnapshot doc : snapshot) {
+                    Mood mood = doc.toObject(Mood.class);
+                    if (mood != null) {
+                        allMoods.add(mood);
+                        followedMoods.add(mood);
                     }
-                })
-                .addOnFailureListener(e -> Log.e("FollowedMoodActivity", "Error fetching moods", e));
+                }
+            });
+
+            tasks.add(task);
+        }
+
+        // Wait for all fetches to complete
+        Tasks.whenAllComplete(tasks)
+                .addOnSuccessListener(done -> adapter.notifyDataSetChanged())
+                .addOnFailureListener(e ->
+                        Log.e("FollowedMoodActivity", "Error fetching followed moods", e));
     }
 
     private void showFilterOptions() {
@@ -118,58 +117,57 @@ public class FollowedMoodActivity extends AppCompatActivity {
     }
 
     private void resetAndLoadAllMoods() {
-        // Reset to the original list (no filtering applied)
         followedMoods.clear();
-        followedMoods.addAll(allMoods);
+        for (Mood mood : allMoods) {
+            if (mood.getPrivacy() == Mood.Privacy.PUBLIC) {
+                followedMoods.add(mood);
+            }
+        }
         adapter.notifyDataSetChanged();
     }
 
     private void filterByRecentWeek() {
         long oneWeekAgo = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000);
-        ArrayList<Mood> filteredMoods = new ArrayList<>();
+        ArrayList<Mood> filtered = new ArrayList<>();
 
-        for (Mood mood : allMoods) {  // Use the allMoods list
-            if (mood.getTimestamp().getTime() >= oneWeekAgo) {
-                filteredMoods.add(mood);
+        for (Mood mood : allMoods) {
+            if (mood.getTimestamp() != null && mood.getTimestamp().getTime() >= oneWeekAgo) {
+                filtered.add(mood);
             }
         }
 
         followedMoods.clear();
-        followedMoods.addAll(filteredMoods);
+        followedMoods.addAll(filtered);
         adapter.notifyDataSetChanged();
     }
 
     private void showEmotionFilterDialog() {
         Mood.EmotionalState[] values = Mood.EmotionalState.values();
         String[] emotionNames = new String[values.length];
-        for (int i = 0; i < values.length; i++) {
-            emotionNames[i] = values[i].name();
-        }
+        for (int i = 0; i < values.length; i++) emotionNames[i] = values[i].name();
 
         new AlertDialog.Builder(this)
                 .setTitle("Select Emotion")
-                .setItems(emotionNames, (dialog, which) -> filterByEmotion(emotionNames[which]))
+                .setItems(emotionNames, (dialog, which) ->
+                        filterByEmotion(emotionNames[which]))
                 .show();
     }
 
     private void filterByEmotion(String emotion) {
-        ArrayList<Mood> filteredMoods = new ArrayList<>();
-
-        for (Mood mood : allMoods) {  // Use the allMoods list
+        ArrayList<Mood> filtered = new ArrayList<>();
+        for (Mood mood : allMoods) {
             if (mood.getEmotion().name().equalsIgnoreCase(emotion)) {
-                filteredMoods.add(mood);
+                filtered.add(mood);
             }
         }
-
         followedMoods.clear();
-        followedMoods.addAll(filteredMoods);
+        followedMoods.addAll(filtered);
         adapter.notifyDataSetChanged();
     }
 
     private void showReasonFilterDialog() {
         EditText input = new EditText(this);
         input.setHint("Enter keyword");
-
         new AlertDialog.Builder(this)
                 .setTitle("Filter by Reason")
                 .setView(input)
@@ -182,16 +180,14 @@ public class FollowedMoodActivity extends AppCompatActivity {
     }
 
     private void filterByReasonContains(String keyword) {
-        ArrayList<Mood> filteredMoods = new ArrayList<>();
-
-        for (Mood mood : allMoods) {  // Use the allMoods list
+        ArrayList<Mood> filtered = new ArrayList<>();
+        for (Mood mood : allMoods) {
             if (mood.getReason() != null && mood.getReason().toLowerCase().contains(keyword.toLowerCase())) {
-                filteredMoods.add(mood);
+                filtered.add(mood);
             }
         }
-
         followedMoods.clear();
-        followedMoods.addAll(filteredMoods);
+        followedMoods.addAll(filtered);
         adapter.notifyDataSetChanged();
     }
 }
