@@ -22,8 +22,10 @@ public class SearchFragment extends Fragment {
     private EditText searchEditText;
     private ListView searchResultsListView;
 
-    private List<UserSearchItem> allUsersList;
-    private List<UserSearchItem> filteredUsersList;
+    private final List<UserSearchItem> allUsersList = new ArrayList<>();
+    private final List<UserSearchItem> filteredUsersList = new ArrayList<>();
+    private final Set<String> seenUserIds = new HashSet<>();
+
     private UserSearchAdapter searchAdapter;
 
     private FirebaseFirestore firestore;
@@ -33,11 +35,17 @@ public class SearchFragment extends Fragment {
     private String currentUsername = "";
     private String currentUserId = "";
 
+    private List<String> followingList = new ArrayList<>();
+    private List<String> followRequestsList = new ArrayList<>();
+
+    private ListenerRegistration usersListener;
+    private ListenerRegistration currentUserLiveListener;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_search, container, false); // Reuse activity layout
+        return inflater.inflate(R.layout.fragment_search, container, false);
     }
 
     @Override
@@ -49,14 +57,16 @@ public class SearchFragment extends Fragment {
         mAuth = FirebaseAuth.getInstance();
         firebaseUser = mAuth.getCurrentUser();
 
-        allUsersList = new ArrayList<>();
-        filteredUsersList = new ArrayList<>();
-
         searchAdapter = new UserSearchAdapter(filteredUsersList);
         searchResultsListView.setAdapter(searchAdapter);
 
-        loadCurrentUser();
-        loadAllUsers();
+        if (firebaseUser != null) {
+            currentUserId = firebaseUser.getUid();
+            fetchCurrentUserThenListen(); // 🧠 new flow
+        } else {
+            Toast.makeText(requireContext(), "You must be logged in to search", Toast.LENGTH_SHORT).show();
+            requireActivity().finish();
+        }
 
         searchEditText.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -67,52 +77,108 @@ public class SearchFragment extends Fragment {
         });
     }
 
-    private void loadCurrentUser() {
-        if (firebaseUser == null) {
-            Toast.makeText(requireContext(), "You must be logged in to search", Toast.LENGTH_SHORT).show();
-            requireActivity().finish();
-            return;
-        }
-        currentUserId = firebaseUser.getUid();
-
+    // 🧠 BLOCKING fetch + real-time after init
+    private void fetchCurrentUserThenListen() {
         firestore.collection("Users").document(currentUserId).get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        currentUsername = documentSnapshot.getString("username");
+                .addOnSuccessListener(snapshot -> {
+                    if (snapshot.exists()) {
+                        currentUsername = snapshot.getString("username");
+
+                        List<String> following = (List<String>) snapshot.get("following");
+                        List<String> requests = (List<String>) snapshot.get("followRequests");
+
+                        followingList = (following != null) ? following : new ArrayList<>();
+                        followRequestsList = (requests != null) ? requests : new ArrayList<>();
+
+                        // ✅ Start real-time user list after we KNOW we have follow data
+                        startListeningToUsers();
+
+                        // ✅ Also set up live listener for follow updates
+                        listenToCurrentUserLive();
                     }
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(requireContext(),
-                                "Failed to load current user", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> Toast.makeText(requireContext(), "Failed to load user", Toast.LENGTH_SHORT).show());
     }
 
-    private void loadAllUsers() {
-        firestore.collection("Users")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    allUsersList.clear();
+    private void listenToCurrentUserLive() {
+        currentUserLiveListener = firestore.collection("Users")
+                .document(currentUserId)
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null || snapshot == null || !snapshot.exists()) return;
 
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                    List<String> following = (List<String>) snapshot.get("following");
+                    List<String> requests = (List<String>) snapshot.get("followRequests");
+
+                    followingList = (following != null) ? following : new ArrayList<>();
+                    followRequestsList = (requests != null) ? requests : new ArrayList<>();
+
+                    updateAllUserStates(); // Re-render follow buttons
+                });
+    }
+
+    private void startListeningToUsers() {
+        usersListener = firestore.collection("Users")
+                .addSnapshotListener((snapshots, e) -> {
+                    if (e != null || snapshots == null) return;
+
+                    allUsersList.clear();
+                    seenUserIds.clear();
+
+                    for (DocumentSnapshot doc : snapshots) {
                         String uid = doc.getId();
                         String username = doc.getString("username");
-                        if (username != null && !username.isEmpty()) {
-                            allUsersList.add(new UserSearchItem(username, uid));
-                        }
+
+                        if (uid.equals(currentUserId)) continue;
+                        if (username == null || username.isEmpty()) continue;
+                        if (seenUserIds.contains(uid)) continue;
+
+                        seenUserIds.add(uid);
+
+                        // 🔍 Check this user's followers/followRequests
+                        firestore.collection("Users").document(uid).get()
+                                .addOnSuccessListener(userDoc -> {
+                                    UserSearchItem item = new UserSearchItem(username, uid);
+
+                                    List<String> followers = (List<String>) userDoc.get("followers");
+                                    List<String> requests = (List<String>) userDoc.get("followRequests");
+
+                                    if (followers != null && followers.contains(currentUserId)) {
+                                        item.setState(UserSearchItem.FollowState.UNFOLLOW);
+                                    } else if (requests != null && requests.contains(currentUserId)) {
+                                        item.setState(UserSearchItem.FollowState.REQUESTED);
+                                    } else {
+                                        item.setState(UserSearchItem.FollowState.FOLLOW);
+                                    }
+
+                                    allUsersList.add(item);
+                                    filterUserList(searchEditText.getText().toString().trim());
+                                });
                     }
-                    filterUserList(searchEditText.getText().toString().trim());
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(requireContext(),
-                                "Failed to load users", Toast.LENGTH_SHORT).show());
+                });
+    }
+
+    private void updateAllUserStates() {
+        for (UserSearchItem item : allUsersList) {
+            item.setState(getFollowState(item.getUserId()));
+        }
+        filterUserList(searchEditText.getText().toString().trim());
+    }
+
+    private UserSearchItem.FollowState getFollowState(String uid) {
+        if (followingList.contains(uid)) {
+            return UserSearchItem.FollowState.UNFOLLOW;
+        } else if (followRequestsList.contains(uid)) {
+            return UserSearchItem.FollowState.REQUESTED;
+        } else {
+            return UserSearchItem.FollowState.FOLLOW;
+        }
     }
 
     private void filterUserList(String query) {
         filteredUsersList.clear();
         if (!query.isEmpty()) {
             for (UserSearchItem item : allUsersList) {
-                String username = item.getUsername();
-                if (username.equalsIgnoreCase(currentUsername)) continue;
-                if (username.toLowerCase().contains(query.toLowerCase())) {
+                if (item.getUsername().toLowerCase().contains(query.toLowerCase())) {
                     filteredUsersList.add(item);
                 }
             }
@@ -120,22 +186,33 @@ public class SearchFragment extends Fragment {
         searchAdapter.notifyDataSetChanged();
     }
 
-    private void sendFollowRequest(String targetUserId) {
-        if (currentUserId.isEmpty()) {
-            Toast.makeText(requireContext(), "No current user ID found", Toast.LENGTH_SHORT).show();
-            return;
-        }
+    private void sendFollowRequest(String targetUserId, UserSearchItem item) {
         firestore.collection("Users")
                 .document(targetUserId)
                 .update("followRequests", FieldValue.arrayUnion(currentUserId))
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(requireContext(),
-                            "Follow request sent!", Toast.LENGTH_SHORT).show();
+                    item.setState(UserSearchItem.FollowState.REQUESTED);
+                    searchAdapter.notifyDataSetChanged();
+                    Toast.makeText(requireContext(), "Follow request sent!", Toast.LENGTH_SHORT).show();
                 })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(),
-                            "Error sending request: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e -> Toast.makeText(requireContext(),
+                        "Error sending request: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    private void unfollowUser(String targetUserId, UserSearchItem item) {
+        firestore.collection("Users").document(targetUserId)
+                .update("followers", FieldValue.arrayRemove(currentUserId))
+                .addOnSuccessListener(aVoid -> {
+                    firestore.collection("Users").document(currentUserId)
+                            .update("following", FieldValue.arrayRemove(targetUserId))
+                            .addOnSuccessListener(aVoid2 -> {
+                                item.setState(UserSearchItem.FollowState.FOLLOW);
+                                searchAdapter.notifyDataSetChanged();
+                                Toast.makeText(requireContext(), "Unfollowed", Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(requireContext(), "Error unfollowing: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private class UserSearchAdapter extends BaseAdapter {
@@ -169,22 +246,69 @@ public class SearchFragment extends Fragment {
                 startActivity(intent);
             });
 
-            followButton.setOnClickListener(v -> sendFollowRequest(currentItem.getUserId()));
+            followButton.setVisibility(View.VISIBLE);
+            switch (currentItem.getState()) {
+                case FOLLOW:
+                    followButton.setText("Follow");
+                    followButton.setEnabled(true);
+                    break;
+                case REQUESTED:
+                    followButton.setText("Requested");
+                    followButton.setEnabled(false);
+                    break;
+                case UNFOLLOW:
+                    followButton.setText("Unfollow");
+                    followButton.setEnabled(true);
+                    break;
+            }
+
+            followButton.setOnClickListener(v -> {
+                switch (currentItem.getState()) {
+                    case FOLLOW:
+                        sendFollowRequest(currentItem.getUserId(), currentItem);
+                        break;
+                    case UNFOLLOW:
+                        unfollowUser(currentItem.getUserId(), currentItem);
+                        break;
+                    case REQUESTED:
+                        Toast.makeText(requireContext(), "Request already sent", Toast.LENGTH_SHORT).show();
+                        break;
+                }
+            });
 
             return convertView;
         }
     }
 
     private static class UserSearchItem {
+
+        public enum FollowState {
+            FOLLOW,
+            REQUESTED,
+            UNFOLLOW
+        }
+
         private final String username;
         private final String userId;
+        private FollowState state;
 
         public UserSearchItem(String username, String userId) {
             this.username = username;
             this.userId = userId;
+            this.state = FollowState.FOLLOW;
         }
 
         public String getUsername() { return username; }
         public String getUserId() { return userId; }
+
+        public FollowState getState() { return state; }
+        public void setState(FollowState state) { this.state = state; }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (usersListener != null) usersListener.remove();
+        if (currentUserLiveListener != null) currentUserLiveListener.remove();
     }
 }

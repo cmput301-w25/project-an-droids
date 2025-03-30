@@ -1,26 +1,20 @@
 package com.example.an_droids;
 
 import android.os.Bundle;
+import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
-import androidx.viewpager2.adapter.FragmentStateAdapter;
-import androidx.viewpager2.widget.ViewPager2;
 
-import com.google.android.material.tabs.TabLayout;
-import com.google.android.material.tabs.TabLayoutMediator;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class MainActivity extends AppCompatActivity {
 
     private String userId;
-    private ViewPager2 viewPager;
-    private TabLayout tabLayout;
-
-    private final String[] tabTitles = new String[]{
-            "Feed", "Profile", "My Moods", "Search", "Requests"
-    };
+    private BottomNavigationView bottomNav;
+    private ImageView profileIcon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,43 +28,46 @@ public class MainActivity extends AppCompatActivity {
 
         userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+
         setContentView(R.layout.activity_main);
 
-        viewPager = findViewById(R.id.viewPager);
-        tabLayout = findViewById(R.id.tabLayout);
+        bottomNav = findViewById(R.id.bottom_navigation);
+        profileIcon = findViewById(R.id.profile_icon);
 
-        viewPager.setAdapter(new HomePagerAdapter(this, userId));
+        loadFragment(new FollowedMoodsFragment());
 
-        new TabLayoutMediator(tabLayout, viewPager,
-                (tab, position) -> tab.setText(tabTitles[position])
-        ).attach();
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            Fragment selectedFragment = null;
+
+            if (id == R.id.nav_feed) {
+                selectedFragment = new FollowedMoodsFragment();
+            } else if (id == R.id.nav_search) {
+                selectedFragment = new SearchFragment();
+            } else if (id == R.id.nav_moods) {
+                selectedFragment = MoodsFragment.newInstance(userId);
+            } else if (id == R.id.nav_requests) {
+                selectedFragment = FollowersFragment.newInstance(userId);
+            } else if (id == R.id.nav_profile) {
+                selectedFragment = ProfileFragment.newInstance(userId);
+            }
+
+            if (selectedFragment != null) {
+                loadFragment(selectedFragment);
+                return true;
+            }
+
+            return false;
+        });
+
+        profileIcon.setOnClickListener(v ->
+                loadFragment(ProfileFragment.newInstance(userId)));
     }
 
-    private static class HomePagerAdapter extends FragmentStateAdapter {
-
-        private final String userId;
-
-        public HomePagerAdapter(@NonNull AppCompatActivity activity, String userId) {
-            super(activity);
-            this.userId = userId;
-        }
-
-        @NonNull
-        @Override
-        public Fragment createFragment(int position) {
-            switch (position) {
-                case 0: return new FollowedMoodsFragment();
-                case 1: return ProfileFragment.newInstance(userId); // ✅ shows profile inline
-                case 2: return MoodsFragment.newInstance(userId);
-                case 3: return new SearchFragment();                // ✅ shows search inline
-                case 4: return FollowersFragment.newInstance(userId);
-                default: return new Fragment();
-            }
-        }
-
-        @Override
-        public int getItemCount() {
-            return 5;
-        }
+    private void loadFragment(Fragment fragment) {
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.main_fragment_container, fragment)
+                .commit();
     }
 }

@@ -166,6 +166,34 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/timeLabel3"
-        app:layout_constraintVertical_bias="0.652" />
+        app:layout_constraintVertical_bias="0.14" />
+
+    <LinearLayout
+        android:id="@+id/voiceNoteLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingTop="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/privacySpinner">
+
+        <Button
+            android:id="@+id/recordVoiceButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎙 Record" />
+
+        <Button
+            android:id="@+id/playVoiceButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="▶️ Play" />
+    </LinearLayout>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

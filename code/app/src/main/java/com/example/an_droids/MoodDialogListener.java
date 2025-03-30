@@ -7,8 +7,4 @@ public interface MoodDialogListener {
     void AddMood(Mood mood);
     void EditMood(Mood mood);
 
-    @NonNull
-    Fragment getItem(int position);
-
-    int getCount();
 }

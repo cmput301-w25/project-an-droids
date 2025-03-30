@@ -15,6 +15,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -51,6 +52,7 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         TextView socialView = view.findViewById(R.id.socialText);
         TextView privacyView = view.findViewById(R.id.privacyText);
         ImageView infoButton = view.findViewById(R.id.infoButton);
+        TextView locationView = view.findViewById(R.id.locationText);
 
         moodTitle.setText(mood.getEmotion().name() + " " + mood.getEmotionEmoji());
         reasonView.setText(mood.getReason());
@@ -65,7 +67,11 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
             dateView.setText("");
             timeView.setText("");
         }
-
+        locationView.setText(
+                mood.getAddress() != null && !mood.getAddress().isEmpty()
+                        ? "📍 " + mood.getAddress()
+                        : "📍 Not available"
+        );
         socialView.setText(mood.getSocialSituationEmojiLabel());
         privacyView.setText(mood.getPrivacy() == Mood.Privacy.PRIVATE ? "🔒 Private" : "🌍 Public");
         view.setBackgroundColor(Color.parseColor(mood.getEmotionColorHex()));
@@ -89,6 +95,8 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         TextView locationView = view.findViewById(R.id.detailLocation);
         Button commentButton = view.findViewById(R.id.moodCommentButton);
         Button viewCommentsButton = view.findViewById(R.id.moodViewCommentsButton);
+        Button playVoiceButton = view.findViewById(R.id.moodPlayVoiceButton);
+        VoiceNoteUtil voiceUtil = new VoiceNoteUtil();
 
         emotionView.setText(mood.getEmotion().name());
         emojiView.setText(mood.getEmotionEmoji());
@@ -118,7 +126,19 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
             imageView.setVisibility(View.GONE);
         }
 
-        // ✅ Anyone can comment
+        if (mood.getVoiceNoteBlob() != null) {
+            playVoiceButton.setVisibility(View.VISIBLE);
+            playVoiceButton.setOnClickListener(v -> {
+                try {
+                    voiceUtil.startPlayback(context, mood.getVoiceNoteBlob().toBytes());
+                } catch (IOException e) {
+                    Toast.makeText(context, "Playback failed", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            playVoiceButton.setVisibility(View.GONE);
+        }
+
         commentButton.setVisibility(View.VISIBLE);
         commentButton.setOnClickListener(v -> openCommentDialog(mood));
 
