@@ -52,6 +52,7 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         TextView socialView = view.findViewById(R.id.socialText);
         TextView privacyView = view.findViewById(R.id.privacyText);
         ImageView infoButton = view.findViewById(R.id.infoButton);
+        TextView locationView = view.findViewById(R.id.locationText);
 
         moodTitle.setText(mood.getEmotion().name() + " " + mood.getEmotionEmoji());
         reasonView.setText(mood.getReason());
@@ -66,7 +67,11 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
             dateView.setText("");
             timeView.setText("");
         }
-
+        locationView.setText(
+                mood.getAddress() != null && !mood.getAddress().isEmpty()
+                        ? "📍 " + mood.getAddress()
+                        : "📍 Not available"
+        );
         socialView.setText(mood.getSocialSituationEmojiLabel());
         privacyView.setText(mood.getPrivacy() == Mood.Privacy.PRIVATE ? "🔒 Private" : "🌍 Public");
         view.setBackgroundColor(Color.parseColor(mood.getEmotionColorHex()));

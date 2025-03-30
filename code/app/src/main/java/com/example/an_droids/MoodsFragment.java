@@ -25,8 +25,7 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
     private String userId;
     private MoodProvider moodProvider;
 
-    private Button filterButton, mapButton;
-    private FloatingActionButton addMoodButton;
+    private Button filterButton, mapButton, addMoodButton;
 
     public MoodsFragment() {
         // Required empty public constructor
