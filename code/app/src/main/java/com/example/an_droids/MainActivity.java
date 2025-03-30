@@ -11,8 +11,9 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements MoodDialogListener {
 
     private String userId;
     private ViewPager2 viewPager;
@@ -44,6 +45,29 @@ public class MainActivity extends AppCompatActivity {
         new TabLayoutMediator(tabLayout, viewPager,
                 (tab, position) -> tab.setText(tabTitles[position])
         ).attach();
+    }
+
+    @Override
+    public void AddMood(Mood mood) {
+        MoodProvider moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
+        moodProvider.addMood(mood, userId);
+    }
+
+    @Override
+    public void EditMood(Mood mood) {
+        MoodProvider moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
+        moodProvider.updateMood(mood);
+    }
+
+    @NonNull
+    @Override
+    public Fragment getItem(int position) {
+        return null;
+    }
+
+    @Override
+    public int getCount() {
+        return 0;
     }
 
     private static class HomePagerAdapter extends FragmentStateAdapter {

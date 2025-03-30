@@ -16,7 +16,7 @@ public class Mood implements Serializable {
     private String reason;
     @Exclude
     private transient Bitmap image;
-    private Blob imageBlob;
+    private transient Blob imageBlob;
     // NEW: add ownerId field that will be saved to Firestore
     private String ownerId;
 
