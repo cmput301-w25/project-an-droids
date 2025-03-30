@@ -3,8 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="20dp"
-    tools:context=".ProfileActivity">
+    android:padding="20dp">
 
     <TextView
         android:id="@+id/profileTitle"
@@ -17,14 +16,27 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <ImageView
+        android:id="@+id/avatarImage"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center_horizontal"
+        android:contentDescription="Avatar"
+        android:src="@drawable/default_profile_account_unknown_icon_black_silhouette_free_vector"
+        app:layout_constraintBottom_toTopOf="@+id/usernameEditText"
+        app:layout_constraintTop_toBottomOf="@+id/profileTitle"
+        tools:layout_editor_absoluteX="127dp" />
+
     <EditText
         android:id="@+id/usernameEditText"
         android:layout_width="0dp"
         android:layout_height="50dp"
+        android:layout_marginTop="156dp"
         android:hint="Enter Username"
-        app:layout_constraintTop_toBottomOf="@id/profileTitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/profileTitle" />
 
     <EditText
         android:id="@+id/emailEditText"
@@ -40,18 +52,9 @@
         android:layout_width="0dp"
         android:layout_height="50dp"
         android:hint="Enter Date of Birth"
-        app:layout_constraintTop_toBottomOf="@id/emailEditText"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <EditText
-        android:id="@+id/locationEditText"
-        android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:hint="Enter Location"
-        app:layout_constraintTop_toBottomOf="@id/dobEditText"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/emailEditText" />
 
     <!-- Save Button (Initially Visible) -->
 
@@ -61,32 +64,23 @@
         android:id="@+id/saveButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="70dp"
         android:text="Save"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/locationEditText" />
+        app:layout_constraintTop_toBottomOf="@+id/dobEditText" />
 
     <Button
         android:id="@+id/logoutButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="70dp"
         android:text="Logout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.028"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/locationEditText" />
-
-    <Button
-        android:id="@+id/editButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Edit"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/locationEditText"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
+        app:layout_constraintTop_toBottomOf="@+id/dobEditText" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

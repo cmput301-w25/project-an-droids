@@ -96,8 +96,6 @@ public class ViewUserProfile extends AppCompatActivity {
                             updateFollowButtonUI();
                             return;
                         }
-
-                        loadPublicMoods(searchedUserId);
                         checkRelationshipState();
                     } else {
                         Toast.makeText(ViewUserProfile.this, "User not found", Toast.LENGTH_SHORT).show();
@@ -220,27 +218,6 @@ public class ViewUserProfile extends AppCompatActivity {
                 followButton.setEnabled(true);
                 break;
         }
-    }
-
-    private void loadPublicMoods(String userId) {
-        moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
-        moodList = moodProvider.getMoods();
-        moodArrayAdapter = new MoodArrayAdapter(this, moodList);
-        moodListView.setAdapter(moodArrayAdapter);
-
-        moodProvider.listenForUpdates(new MoodProvider.DataStatus() {
-            @Override
-            public void onDataUpdated() {
-                moodArrayAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onError(String error) {
-                Toast.makeText(ViewUserProfile.this, "Error: " + error, Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        moodProvider.loadPublicMoods(searchedUserId);
     }
 
     private void loadThreeLatestMoods() {

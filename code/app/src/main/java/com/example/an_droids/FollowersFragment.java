@@ -27,8 +27,6 @@ public class FollowersFragment extends Fragment {
     private List<String> followersList;
     private List<String> followerUsernames;
     private List<String> followerUserIds;
-
-    // == Requests Section ==
     private RecyclerView requestsRecyclerView;
     private RequestsAdapter requestsAdapter;
     private List<String> requestsList;

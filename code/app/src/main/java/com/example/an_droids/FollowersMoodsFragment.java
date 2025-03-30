@@ -61,6 +61,7 @@ public class FollowersMoodsFragment extends Fragment {
                         adapter.notifyDataSetChanged();
                         return;
                     }
+
                     List<com.google.android.gms.tasks.Task<?>> tasks = new ArrayList<>();
                     ArrayList<Mood> tempList = new ArrayList<>();
 
@@ -73,10 +74,10 @@ public class FollowersMoodsFragment extends Fragment {
                                         .limit(3)
                                         .get()
                                         .addOnSuccessListener(qs -> {
-                                            if (!qs.isEmpty()) {
-                                                for (var docSnap : qs.getDocuments()) {
-                                                    Mood m = docSnap.toObject(Mood.class);
-                                                    if (m != null) tempList.add(m);
+                                            for (var docSnap : qs.getDocuments()) {
+                                                Mood m = docSnap.toObject(Mood.class);
+                                                if (m != null && m.getPrivacy() == Mood.Privacy.PUBLIC) {
+                                                    tempList.add(m);
                                                 }
                                             }
                                         })
@@ -87,12 +88,9 @@ public class FollowersMoodsFragment extends Fragment {
                     }
 
                     Tasks.whenAllComplete(tasks).addOnSuccessListener(taskList -> {
-                        Collections.sort(tempList, new Comparator<Mood>() {
-                            @Override
-                            public int compare(Mood m1, Mood m2) {
-                                if (m1.getTimestamp() == null || m2.getTimestamp() == null) return 0;
-                                return m2.getTimestamp().compareTo(m1.getTimestamp());
-                            }
+                        tempList.sort((m1, m2) -> {
+                            if (m1.getTimestamp() == null || m2.getTimestamp() == null) return 0;
+                            return m2.getTimestamp().compareTo(m1.getTimestamp());
                         });
                         moodFeed.clear();
                         moodFeed.addAll(tempList);

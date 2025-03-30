@@ -14,11 +14,13 @@ import android.widget.ListView;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 
 public class MoodsFragment extends Fragment {
+
     private ListView moodListView;
     private MoodArrayAdapter moodArrayAdapter;
     private ArrayList<Mood> moodList;
@@ -26,6 +28,7 @@ public class MoodsFragment extends Fragment {
     private MoodProvider moodProvider;
 
     private Button filterButton, mapButton;
+    private FloatingActionButton addMoodButton;
 
     public MoodsFragment() {
         // Required empty constructor
@@ -50,6 +53,7 @@ public class MoodsFragment extends Fragment {
         moodListView = view.findViewById(R.id.moodList);
         filterButton = view.findViewById(R.id.filterButton);
         mapButton = view.findViewById(R.id.mapButton);
+        addMoodButton = view.findViewById(R.id.addMoodButton);
 
         moodList = new ArrayList<>();
         moodArrayAdapter = new MoodArrayAdapter(getContext(), moodList);
@@ -57,6 +61,8 @@ public class MoodsFragment extends Fragment {
 
         moodProvider = new MoodProvider(FirebaseFirestore.getInstance(), userId);
         loadMoods();
+
+        addMoodButton.setOnClickListener(v -> openAddMoodDialog());
 
         moodListView.setOnItemClickListener((parent, itemView, position, id) -> {
             Mood mood = moodArrayAdapter.getItem(position);
@@ -79,11 +85,16 @@ public class MoodsFragment extends Fragment {
 
         mapButton.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), MapActivity.class);
-            intent.putExtra("mood_list", moodList); // ✅ Serializable
+            intent.putExtra("mood_list", moodList);
             startActivity(intent);
         });
 
         return view;
+    }
+
+    public void openAddMoodDialog() {
+        AddMoodFragment addMoodFragment = new AddMoodFragment();
+        addMoodFragment.show(requireActivity().getSupportFragmentManager(), "Add Mood");
     }
 
     private void loadMoods() {
