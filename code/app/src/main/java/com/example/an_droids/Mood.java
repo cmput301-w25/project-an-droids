@@ -2,6 +2,8 @@ package com.example.an_droids;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
+
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.Exclude;
 import java.io.ByteArrayOutputStream;
@@ -23,10 +25,12 @@ public class Mood implements Serializable {
     public static final String[] SOCIAL_SITUATIONS = {
             "No Selection", "Alone", "With one other person", "With two to several people", "With a crowd"
     };
-
     private double latitude;
     private double longitude;
     private String address;
+    private Blob voiceNoteBlob;
+    @Exclude
+    private transient Uri voiceNoteUri;
 
     public enum EmotionalState {
         Anger("😠", "#FF6666"),
@@ -198,13 +202,30 @@ public class Mood implements Serializable {
         this.address = address;
     }
 
-    // NEW: Getter and Setter for ownerId
     public String getOwnerId() {
         return ownerId;
     }
 
     public void setOwnerId(String ownerId) {
         this.ownerId = ownerId;
+    }
+
+    public Blob getVoiceNoteBlob() {
+        return voiceNoteBlob;
+    }
+
+    public void setVoiceNoteBlob(Blob voiceNoteBlob) {
+        this.voiceNoteBlob = voiceNoteBlob;
+    }
+
+    @Exclude
+    public Uri getVoiceNoteUri() {
+        return voiceNoteUri;
+    }
+
+    @Exclude
+    public void setVoiceNoteUri(Uri uri) {
+        this.voiceNoteUri = uri;
     }
 
     @Exclude

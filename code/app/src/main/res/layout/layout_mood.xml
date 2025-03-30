@@ -5,16 +5,15 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="12dp"
+    app:cardCornerRadius="16dp"
     app:cardElevation="6dp"
-    android:foreground="?android:attr/selectableItemBackground"
-    android:clickable="false"
-    android:focusable="false">
+    app:cardBackgroundColor="#FFFFFF"
+    android:foreground="?android:attr/selectableItemBackground">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp">
+        android:padding="14dp">
 
         <TextView
             android:id="@+id/moodTitle"
@@ -26,8 +25,8 @@
             android:textColor="@android:color/black"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/infoButton"
-            app:layout_constraintBottom_toTopOf="@+id/reasonText"/>
+            app:layout_constraintEnd_toStartOf="@id/infoButton"
+            app:layout_constraintBottom_toTopOf="@+id/reasonText" />
 
         <ImageView
             android:id="@+id/infoButton"
@@ -35,7 +34,7 @@
             android:layout_height="24dp"
             android:src="@android:drawable/ic_menu_info_details"
             android:contentDescription="Info"
-            app:layout_constraintTop_toTopOf="@+id/moodTitle"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
         <TextView
@@ -47,7 +46,7 @@
             android:maxLines="2"
             android:ellipsize="end"
             android:textSize="14sp"
-            app:layout_constraintTop_toBottomOf="@+id/moodTitle"
+            app:layout_constraintTop_toBottomOf="@id/moodTitle"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
@@ -77,8 +76,7 @@
             android:textSize="12sp"
             android:textColor="@android:color/holo_blue_dark"
             app:layout_constraintTop_toBottomOf="@+id/dateAdded"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintStart_toStartOf="parent" />
 
         <TextView
             android:id="@+id/privacyText"
@@ -88,9 +86,19 @@
             android:textSize="12sp"
             android:textColor="@android:color/holo_red_dark"
             app:layout_constraintTop_toBottomOf="@+id/timeAdded"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <TextView
+            android:id="@+id/locationText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="📍 Location"
+            android:textSize="12sp"
+            android:textColor="#444444"
+            app:layout_constraintTop_toBottomOf="@+id/socialText"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>
-

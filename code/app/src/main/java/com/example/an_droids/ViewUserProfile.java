@@ -233,7 +233,7 @@ public class ViewUserProfile extends AppCompatActivity {
                     moodList.clear();
                     for (DocumentSnapshot doc : querySnapshot) {
                         Mood mood = doc.toObject(Mood.class);
-                        if (mood != null) {
+                        if (mood != null && mood.getPrivacy() == Mood.Privacy.PUBLIC) {
                             moodList.add(mood);
                         }
                     }

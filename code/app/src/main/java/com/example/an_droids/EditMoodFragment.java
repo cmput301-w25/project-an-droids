@@ -7,6 +7,7 @@ import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -15,14 +16,15 @@ import android.provider.MediaStore;
 import android.text.InputFilter;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.Spinner;
-import android.widget.Toast;
+import android.widget.*;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.DialogFragment;
+
+import com.google.firebase.firestore.Blob;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -48,6 +50,9 @@ public class EditMoodFragment extends DialogFragment {
     private static final int REQUEST_IMAGE_CAMERA = 2;
     private static final int MAX_IMAGE_SIZE = 65536;
 
+    private VoiceNoteUtil voiceUtil = new VoiceNoteUtil();
+    private byte[] voiceNoteBytes = null;
+
     public static EditMoodFragment newInstance(Mood mood) {
         EditMoodFragment fragment = new EditMoodFragment();
         Bundle args = new Bundle();
@@ -56,14 +61,8 @@ public class EditMoodFragment extends DialogFragment {
         return fragment;
     }
 
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        if (context instanceof MoodDialogListener) {
-            listener = (MoodDialogListener) context;
-        } else {
-            throw new RuntimeException(context + " must implement MoodDialogListener");
-        }
+    public void setListener(MoodDialogListener listener) {
+        this.listener = listener;
     }
 
     @NonNull
@@ -78,6 +77,8 @@ public class EditMoodFragment extends DialogFragment {
         timeEditText = view.findViewById(R.id.timeEditText);
         reasonEditText = view.findViewById(R.id.reasonEditText);
         selectImage = view.findViewById(R.id.uploadImage);
+        Button recordButton = view.findViewById(R.id.recordVoiceButton);
+        Button playButton = view.findViewById(R.id.playVoiceButton);
 
         reasonEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(200)});
 
@@ -86,48 +87,76 @@ public class EditMoodFragment extends DialogFragment {
             throw new IllegalArgumentException("No Mood passed to EditMoodFragment");
         }
 
+        // Restore date/time
         Date timestamp = mood.getTimestamp();
         if (timestamp != null) {
             calendar.setTime(timestamp);
         }
         dateEditText.setText(dateFormatter.format(calendar.getTime()));
         timeEditText.setText(timeFormatter.format(calendar.getTime()));
+
+        // Restore mood values
         reasonEditText.setText(mood.getReason());
         if (mood.getImage() != null) {
             image = mood.getImage();
             selectImage.setImageBitmap(image);
         }
 
-        for (int i = 0; i < emotionSpinner.getAdapter().getCount(); i++) {
-            String item = (String) emotionSpinner.getAdapter().getItem(i);
-            if (item.equalsIgnoreCase(mood.getEmotion().toString())) {
-                emotionSpinner.setSelection(i);
-                break;
-            }
+        // Load existing voice note blob if it exists
+        if (mood.getVoiceNoteBlob() != null) {
+            voiceNoteBytes = mood.getVoiceNoteBlob().toBytes();
         }
-        for (int i = 0; i < socialSituationSpinner.getAdapter().getCount(); i++) {
-            String item = (String) socialSituationSpinner.getAdapter().getItem(i);
-            if (item.equalsIgnoreCase(mood.getSocialSituation())) {
-                socialSituationSpinner.setSelection(i);
-                break;
-            }
-        }
-        String privacyDisplay = mood.getPrivacy().name().substring(0, 1).toUpperCase() +
-                mood.getPrivacy().name().substring(1).toLowerCase();
-        for (int i = 0; i < privacySpinner.getAdapter().getCount(); i++) {
-            String item = (String) privacySpinner.getAdapter().getItem(i);
-            if (item.equals(privacyDisplay)) {
-                privacySpinner.setSelection(i);
-                break;
-            }
-        }
+
+        // Set spinner selections
+        setSpinnerSelection(emotionSpinner, mood.getEmotion().toString());
+        setSpinnerSelection(socialSituationSpinner, mood.getSocialSituation());
+        setSpinnerSelection(privacySpinner, capitalize(mood.getPrivacy().name()));
 
         dateEditText.setOnClickListener(v -> showDatePickerDialog());
         timeEditText.setOnClickListener(v -> showTimePickerDialog());
         selectImage.setOnClickListener(v -> showImagePickerDialog());
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        return builder.setView(view)
+        // Voice recording button
+        recordButton.setOnClickListener(v -> {
+            if (recordButton.getText().toString().contains("🎙")) {
+                if (ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.RECORD_AUDIO)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(requireActivity(), new String[]{android.Manifest.permission.RECORD_AUDIO}, 201);
+                    Toast.makeText(getContext(), "Please grant microphone permission", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                try {
+                    voiceUtil.startRecording(requireContext());
+                    recordButton.setText("🛑 Stop");
+                } catch (IOException e) {
+                    Toast.makeText(getContext(), "Recording failed", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                try {
+                    voiceNoteBytes = voiceUtil.stopRecording();
+                    recordButton.setText("🎙 Record");
+                    Toast.makeText(getContext(), "Recording saved!", Toast.LENGTH_SHORT).show();
+                } catch (IOException e) {
+                    Toast.makeText(getContext(), "Stop failed", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        // Voice playback button
+        playButton.setOnClickListener(v -> {
+            if (voiceNoteBytes != null) {
+                try {
+                    voiceUtil.startPlayback(requireContext(), voiceNoteBytes);
+                } catch (IOException e) {
+                    Toast.makeText(getContext(), "Playback failed", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Toast.makeText(getContext(), "No voice note", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        return new AlertDialog.Builder(getContext())
+                .setView(view)
                 .setTitle("Edit Mood")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Save", (dialog, which) -> {
@@ -136,6 +165,7 @@ public class EditMoodFragment extends DialogFragment {
                     String reason = reasonEditText.getText().toString();
                     Date newDate = calendar.getTime();
 
+                    // Compress image
                     if (image != null) {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         int quality = 80;
@@ -148,48 +178,51 @@ public class EditMoodFragment extends DialogFragment {
                             imageBytes = baos.toByteArray();
                         }
                         if (imageBytes.length > MAX_IMAGE_SIZE) {
-                            Toast.makeText(getContext(), "Image exceeds maximum size of 65,536 bytes. Please choose a smaller image.", Toast.LENGTH_LONG).show();
+                            Toast.makeText(getContext(), "Image exceeds size limit. Use smaller image.", Toast.LENGTH_LONG).show();
                             return;
                         }
                         image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
                     }
 
+                    // Update mood
                     mood.setEmotion(selectedEmotion);
                     mood.setTimestamp(newDate);
                     mood.setReason(reason);
                     mood.setImage(image);
                     mood.setSocialSituation(selectedSocialSituation);
-                    String selectedPrivacyStr = privacySpinner.getSelectedItem().toString();
-                    Mood.Privacy selectedPrivacy = Mood.Privacy.valueOf(selectedPrivacyStr.toUpperCase());
+                    Mood.Privacy selectedPrivacy = Mood.Privacy.valueOf(
+                            privacySpinner.getSelectedItem().toString().toUpperCase(Locale.ROOT));
                     mood.setPrivacy(selectedPrivacy);
+
+                    if (voiceNoteBytes != null) {
+                        mood.setVoiceNoteBlob(Blob.fromBytes(voiceNoteBytes));
+                    }
+
                     listener.EditMood(mood);
-                }).create();
+                })
+                .create();
     }
 
     private void showDatePickerDialog() {
-        int defaultYear = calendar.get(Calendar.YEAR);
-        int defaultMonth = calendar.get(Calendar.MONTH);
-        int defaultDay = calendar.get(Calendar.DAY_OF_MONTH);
-        DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(),
-                (view, year, month, dayOfMonth) -> {
-                    calendar.set(Calendar.YEAR, year);
-                    calendar.set(Calendar.MONTH, month);
-                    calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                    dateEditText.setText(dateFormatter.format(calendar.getTime()));
-                }, defaultYear, defaultMonth, defaultDay);
-        datePickerDialog.show();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        new DatePickerDialog(requireContext(), (view, y, m, d) -> {
+            calendar.set(Calendar.YEAR, y);
+            calendar.set(Calendar.MONTH, m);
+            calendar.set(Calendar.DAY_OF_MONTH, d);
+            dateEditText.setText(dateFormatter.format(calendar.getTime()));
+        }, year, month, day).show();
     }
 
     private void showTimePickerDialog() {
-        int defaultHour = calendar.get(Calendar.HOUR_OF_DAY);
-        int defaultMinute = calendar.get(Calendar.MINUTE);
-        TimePickerDialog timePickerDialog = new TimePickerDialog(requireContext(),
-                (view, hourOfDay, minute) -> {
-                    calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                    calendar.set(Calendar.MINUTE, minute);
-                    timeEditText.setText(timeFormatter.format(calendar.getTime()));
-                }, defaultHour, defaultMinute, true);
-        timePickerDialog.show();
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(Calendar.MINUTE);
+        new TimePickerDialog(requireContext(), (view, h, m) -> {
+            calendar.set(Calendar.HOUR_OF_DAY, h);
+            calendar.set(Calendar.MINUTE, m);
+            timeEditText.setText(timeFormatter.format(calendar.getTime()));
+        }, hour, minute, true).show();
     }
 
     private void showImagePickerDialog() {
@@ -199,7 +232,6 @@ public class EditMoodFragment extends DialogFragment {
                         (dialog, which) -> {
                             if (which == 0) pickImageFromGallery();
                             else if (which == 1) captureImageFromCamera();
-                            else dialog.dismiss();
                         }).show();
     }
 
@@ -233,5 +265,19 @@ public class EditMoodFragment extends DialogFragment {
                 }
             }
         }
+    }
+
+    private void setSpinnerSelection(Spinner spinner, String valueToSelect) {
+        for (int i = 0; i < spinner.getAdapter().getCount(); i++) {
+            String item = spinner.getAdapter().getItem(i).toString();
+            if (item.equalsIgnoreCase(valueToSelect)) {
+                spinner.setSelection(i);
+                break;
+            }
+        }
+    }
+
+    private String capitalize(String text) {
+        return text.substring(0, 1).toUpperCase(Locale.ROOT) + text.substring(1).toLowerCase(Locale.ROOT);
     }
 }
