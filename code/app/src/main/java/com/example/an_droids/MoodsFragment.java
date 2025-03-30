@@ -7,9 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
+import android.widget.*;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -19,7 +17,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 
-public class MoodsFragment extends Fragment {
+public class MoodsFragment extends Fragment implements MoodDialogListener {
 
     private ListView moodListView;
     private MoodArrayAdapter moodArrayAdapter;
@@ -31,7 +29,7 @@ public class MoodsFragment extends Fragment {
     private FloatingActionButton addMoodButton;
 
     public MoodsFragment() {
-        // Required empty constructor
+        // Required empty public constructor
     }
 
     public static MoodsFragment newInstance(String userId) {
@@ -66,8 +64,7 @@ public class MoodsFragment extends Fragment {
 
         moodListView.setOnItemClickListener((parent, itemView, position, id) -> {
             Mood mood = moodArrayAdapter.getItem(position);
-            EditMoodFragment.newInstance(mood)
-                    .show(requireActivity().getSupportFragmentManager(), "Edit Mood");
+            openEditMoodDialog(mood);
         });
 
         moodListView.setOnItemLongClickListener((parent, itemView, position, id) -> {
@@ -84,17 +81,48 @@ public class MoodsFragment extends Fragment {
         filterButton.setOnClickListener(v -> showFilterOptions());
 
         mapButton.setOnClickListener(v -> {
+            for (Mood mood : moodList) {
+                mood.setVoiceNoteBlob(null);
+                mood.setImage(null);
+            }
             Intent intent = new Intent(requireContext(), MapActivity.class);
             intent.putExtra("mood_list", moodList);
             startActivity(intent);
+
         });
 
         return view;
     }
 
+    // ✅ Launch AddMoodFragment with direct listener
     public void openAddMoodDialog() {
         AddMoodFragment addMoodFragment = new AddMoodFragment();
-        addMoodFragment.show(requireActivity().getSupportFragmentManager(), "Add Mood");
+        addMoodFragment.setListener(this); // Pass self as listener
+        addMoodFragment.show(getChildFragmentManager(), "Add Mood");
+    }
+
+    // ✅ Launch EditMoodFragment with direct listener
+    public void openEditMoodDialog(Mood mood) {
+        EditMoodFragment editMoodFragment = EditMoodFragment.newInstance(mood);
+        editMoodFragment.setListener(this); // Pass self as listener
+        editMoodFragment.show(getChildFragmentManager(), "Edit Mood");
+    }
+
+    // ✅ Listener implementations (instead of MainActivity)
+    @Override
+    public void AddMood(Mood mood) {
+        if (moodProvider != null) {
+            moodProvider.addMood(mood, userId);
+            Log.d("MoodsFragment", "Mood added: " + mood.getReason());
+        }
+    }
+
+    @Override
+    public void EditMood(Mood mood) {
+        if (moodProvider != null) {
+            moodProvider.updateMood(mood);
+            Log.d("MoodsFragment", "Mood updated: " + mood.getReason());
+        }
     }
 
     private void loadMoods() {

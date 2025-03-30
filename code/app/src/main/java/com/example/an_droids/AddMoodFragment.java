@@ -16,6 +16,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.InputFilter;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.*;
@@ -28,9 +29,11 @@ import androidx.fragment.app.DialogFragment;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.Blob;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
 
@@ -47,15 +50,11 @@ public class AddMoodFragment extends DialogFragment {
     private static final int REQUEST_IMAGE_GALLERY = 1;
     private static final int REQUEST_IMAGE_CAMERA = 2;
     private static final int MAX_IMAGE_SIZE = 65536;
+    private VoiceNoteUtil voiceUtil = new VoiceNoteUtil();
+    private byte[] voiceNoteBytes = null;
 
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        if (context instanceof MoodDialogListener) {
-            listener = (MoodDialogListener) context;
-        } else {
-            throw new RuntimeException(context + " must implement MoodDialogListener");
-        }
+    public void setListener(MoodDialogListener listener) {
+        this.listener = listener;
     }
 
     @NonNull
@@ -70,10 +69,52 @@ public class AddMoodFragment extends DialogFragment {
         privacySpinner = view.findViewById(R.id.privacySpinner);
         locationButton = view.findViewById(R.id.locationButton);
         locationText = view.findViewById(R.id.locationText);
+        Button recordButton = view.findViewById(R.id.recordVoiceButton);
+        Button playButton = view.findViewById(R.id.playVoiceButton);
 
         reasonEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(200)});
         selectImage.setOnClickListener(v -> showImagePickerDialog());
         locationButton.setOnClickListener(v -> fetchLocation());
+        recordButton.setOnClickListener(v -> {
+            if (recordButton.getText().toString().contains("🎙")) {
+                if (ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.RECORD_AUDIO)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(requireActivity(), new String[]{android.Manifest.permission.RECORD_AUDIO}, 201);
+                    Toast.makeText(getContext(), "Please grant microphone permission", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                try {
+                    voiceUtil.startRecording(requireContext());
+                    recordButton.setText("🛑 Stop");
+                } catch (IOException e) {
+                    Toast.makeText(getContext(), "Recording failed", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                try {
+                    voiceNoteBytes = voiceUtil.stopRecording();
+                    recordButton.setText("🎙 Record");
+                    Toast.makeText(getContext(), "Recording saved!", Toast.LENGTH_SHORT).show();
+                } catch (IOException e) {
+                    Toast.makeText(getContext(), "Stop failed", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        // Voice playback button
+        playButton.setOnClickListener(v -> {
+            if (voiceNoteBytes != null && voiceNoteBytes.length > 0) {
+                Log.d("VOICE", "Playback starting, bytes = " + voiceNoteBytes.length);
+                try {
+                    voiceUtil.startPlayback(requireContext(), voiceNoteBytes);
+                } catch (IOException e) {
+                    Toast.makeText(getContext(), "Playback failed", Toast.LENGTH_SHORT).show();
+                    Log.e("VOICE", "Playback failed", e);
+                }
+            } else {
+                Log.d("VOICE", "No voice note to play");
+                Toast.makeText(getContext(), "No voice note", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         return new AlertDialog.Builder(getContext())
                 .setView(view)
@@ -132,6 +173,10 @@ public class AddMoodFragment extends DialogFragment {
             newMood.setAddress(locationText.getTag().toString());
         }
 
+        if (voiceNoteBytes != null) {
+            newMood.setVoiceNoteBlob(Blob.fromBytes(voiceNoteBytes));
+        }
+
         try {
             listener.AddMood(newMood);
         } catch (Exception e) {
@@ -152,30 +197,42 @@ public class AddMoodFragment extends DialogFragment {
                 .addOnSuccessListener(location -> {
                     if (location != null) {
                         currentLocation = location;
-                        Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
 
-                        try {
-                            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                            if (!addresses.isEmpty()) {
-                                Address addr = addresses.get(0);
-                                StringBuilder addressBuilder = new StringBuilder();
+                        // Run geocoder off main thread
+                        new Thread(() -> {
+                            Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
+                            try {
+                                List<Address> addresses = geocoder.getFromLocation(
+                                        location.getLatitude(),
+                                        location.getLongitude(),
+                                        1
+                                );
 
-                                if (addr.getThoroughfare() != null) addressBuilder.append(addr.getThoroughfare()).append(" ");
-                                if (addr.getFeatureName() != null) addressBuilder.append(addr.getFeatureName()).append(", ");
-                                if (addr.getLocality() != null) addressBuilder.append(addr.getLocality()).append(", ");
-                                if (addr.getAdminArea() != null) addressBuilder.append(addr.getAdminArea()).append(", ");
-                                if (addr.getPostalCode() != null) addressBuilder.append(addr.getPostalCode()).append(", ");
-                                if (addr.getCountryName() != null) addressBuilder.append(addr.getCountryName());
+                                if (!addresses.isEmpty()) {
+                                    Address addr = addresses.get(0);
+                                    StringBuilder addressBuilder = new StringBuilder();
 
-                                String fullAddress = addressBuilder.toString();
-                                locationText.setText(fullAddress);
-                                locationText.setTag(fullAddress);
-                            } else {
-                                locationText.setText("Location: Unknown");
+                                    if (addr.getThoroughfare() != null) addressBuilder.append(addr.getThoroughfare()).append(" ");
+                                    if (addr.getFeatureName() != null) addressBuilder.append(addr.getFeatureName()).append(", ");
+                                    if (addr.getLocality() != null) addressBuilder.append(addr.getLocality()).append(", ");
+                                    if (addr.getAdminArea() != null) addressBuilder.append(addr.getAdminArea()).append(", ");
+                                    if (addr.getPostalCode() != null) addressBuilder.append(addr.getPostalCode()).append(", ");
+                                    if (addr.getCountryName() != null) addressBuilder.append(addr.getCountryName());
+
+                                    String fullAddress = addressBuilder.toString();
+
+                                    // Update UI on the main thread
+                                    requireActivity().runOnUiThread(() -> {
+                                        locationText.setText(fullAddress);
+                                        locationText.setTag(fullAddress);
+                                    });
+                                }
+                            } catch (IOException e) {
+                                requireActivity().runOnUiThread(() -> locationText.setText("Geocoder failed"));
+                                Log.e("LOCATION", "Geocoder failed", e);
                             }
-                        } catch (IOException e) {
-                            locationText.setText("Geocoder failed");
-                        }
+                        }).start();
+
                     } else {
                         locationText.setText("Location: Unavailable");
                     }

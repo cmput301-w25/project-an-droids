@@ -114,6 +114,14 @@
             android:layout_height="wrap_content"
             android:text="View Comments" />
 
+        <Button
+            android:id="@+id/moodPlayVoiceButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="▶️ Play Voice Note"
+            android:layout_marginTop="12dp"/>
+
+
     </LinearLayout>
 </ScrollView>
 
