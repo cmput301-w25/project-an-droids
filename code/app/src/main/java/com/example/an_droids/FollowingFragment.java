@@ -55,7 +55,12 @@ public class FollowingFragment extends Fragment {
         followingList = new ArrayList<>();
         followingUsernames = new ArrayList<>();
         followingUserIds = new ArrayList<>();
-        followAdapter = new FollowAdapter(followingUsernames, followingUserIds, this::unfollowUser);
+        followAdapter = new FollowAdapter(
+                followingUsernames,
+                followingUserIds,
+                this::unfollowUser,
+                "Unfollow"
+        );
         recyclerView.setAdapter(followAdapter);
 
         firestore = FirebaseFirestore.getInstance();

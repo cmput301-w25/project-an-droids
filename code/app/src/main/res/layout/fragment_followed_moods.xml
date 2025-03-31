@@ -43,6 +43,7 @@
             app:iconGravity="textStart"
             app:iconTint="@color/white"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintStart_toStartOf="parent"
+            android:backgroundTint="@android:color/black" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -146,6 +146,12 @@ public class FollowedMoodsFragment extends Fragment {
                 followedMoods.add(mood);
             }
         }
+
+        followedMoods.sort((a, b) -> {
+            if (a.getTimestamp() == null || b.getTimestamp() == null) return 0;
+            return b.getTimestamp().compareTo(a.getTimestamp());
+        });
+
         adapter.notifyDataSetChanged();
     }
 
@@ -159,8 +165,15 @@ public class FollowedMoodsFragment extends Fragment {
         }
         followedMoods.clear();
         followedMoods.addAll(filtered);
+
+        followedMoods.sort((a, b) -> {
+            if (a.getTimestamp() == null || b.getTimestamp() == null) return 0;
+            return b.getTimestamp().compareTo(a.getTimestamp());
+        });
+
         adapter.notifyDataSetChanged();
     }
+
 
     private void showEmotionFilterDialog() {
         Mood.EmotionalState[] values = Mood.EmotionalState.values();
@@ -183,8 +196,15 @@ public class FollowedMoodsFragment extends Fragment {
         }
         followedMoods.clear();
         followedMoods.addAll(filtered);
+
+        followedMoods.sort((a, b) -> {
+            if (a.getTimestamp() == null || b.getTimestamp() == null) return 0;
+            return b.getTimestamp().compareTo(a.getTimestamp());
+        });
+
         adapter.notifyDataSetChanged();
     }
+
 
     private void showReasonFilterDialog() {
         EditText input = new EditText(requireContext());
@@ -209,6 +229,12 @@ public class FollowedMoodsFragment extends Fragment {
         }
         followedMoods.clear();
         followedMoods.addAll(filtered);
+
+        followedMoods.sort((a, b) -> {
+            if (a.getTimestamp() == null || b.getTimestamp() == null) return 0;
+            return b.getTimestamp().compareTo(a.getTimestamp());
+        });
+
         adapter.notifyDataSetChanged();
     }
 }
