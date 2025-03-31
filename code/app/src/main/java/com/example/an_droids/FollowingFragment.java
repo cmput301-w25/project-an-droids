@@ -20,19 +20,49 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * A Fragment that displays the list of users the current user is following.
+ * Provides real-time updates and allows users to unfollow others.
+ */
 public class FollowingFragment extends Fragment {
+    /** RecyclerView to display the list of followed users. */
     private RecyclerView recyclerView;
+
+    /** Adapter for handling the list of followed users. */
     private FollowAdapter followAdapter;
+
+    /** List of user IDs the current user is following. */
     private List<String> followingList;
+
+    /** List of usernames corresponding to the followed users. */
     private List<String> followingUsernames;
+
+    /** List of user IDs corresponding to the followed users. */
     private List<String> followingUserIds;
+
+    /** User ID of the current user. */
     private String userId;
+
+    /** Firebase Firestore instance for database operations. */
     private FirebaseFirestore firestore;
+
+    /** Firebase Authentication instance for user authentication. */
     private FirebaseAuth mAuth;
+
+    /** Currently authenticated Firebase user. */
     private FirebaseUser currentUser;
 
+    /**
+     * Default constructor for FollowingFragment.
+     */
     public FollowingFragment() {}
 
+    /**
+     * Creates a new instance of FollowingFragment with a specified user ID.
+     *
+     * @param userId The ID of the user whose following list is being displayed.
+     * @return A new instance of FollowingFragment.
+     */
     public static FollowingFragment newInstance(String userId) {
         FollowingFragment fragment = new FollowingFragment();
         Bundle args = new Bundle();
@@ -41,6 +71,14 @@ public class FollowingFragment extends Fragment {
         return fragment;
     }
 
+    /**
+     * Inflates the fragment layout and initializes UI components.
+     *
+     * @param inflater LayoutInflater to inflate the layout.
+     * @param container Parent view that the fragment's UI is attached to.
+     * @param savedInstanceState Saved instance state bundle.
+     * @return The root view of the fragment.
+     */
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_following, container, false);
@@ -72,6 +110,9 @@ public class FollowingFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Listens for real-time updates to the list of followed users.
+     */
     private void listenToFollowingRealtime() {
         firestore.collection("Users").document(userId)
                 .addSnapshotListener((snapshot, e) -> {
@@ -88,6 +129,11 @@ public class FollowingFragment extends Fragment {
                 });
     }
 
+    /**
+     * Fetches usernames for the list of followed user IDs.
+     *
+     * @param userIds List of user IDs to fetch usernames for.
+     */
     private void fetchUsernames(List<String> userIds) {
         Set<String> seenUserIds = new HashSet<>();
         List<String> tempUsernames = new ArrayList<>();
@@ -138,6 +184,11 @@ public class FollowingFragment extends Fragment {
                     });
         }
     }
+    /**
+     * Sends a follow request to another user.
+     *
+     * @param userIdToFollow The ID of the user to follow.
+     */
     private void sendFollowRequest(String userIdToFollow) {
         if (currentUser == null) return;
         String myUid = currentUser.getUid();
@@ -153,6 +204,11 @@ public class FollowingFragment extends Fragment {
     }
 
 
+    /**
+     * Unfollows a user at the specified position in the list.
+     *
+     * @param position The index of the user in the following list.
+     */
     private void unfollowUser(int position) {
         if (currentUser == null || followingUserIds == null || position < 0 || position >= followingUserIds.size()) return;
 
