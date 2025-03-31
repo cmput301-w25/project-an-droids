@@ -23,6 +23,11 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+/**
+ * Activity for the user sign-up process.
+ * This activity handles user registration, input validation, profile image selection,
+ * and storing user data (including profile image) into Firebase.
+ */
 public class SignupActivity extends AppCompatActivity {
 
     private EditText usernameInput, emailInput, passwordInput, reenterPasswordInput, dobInput;
@@ -42,6 +47,10 @@ public class SignupActivity extends AppCompatActivity {
     private static final int MAX_IMAGE_SIZE = 65536;
     private Bitmap profileBitmap;
 
+    /**
+     * Initializes the activity. Sets up input fields, buttons, and the date picker for the date of birth.
+     * Also sets up listeners for handling user input.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,12 +72,14 @@ public class SignupActivity extends AppCompatActivity {
 
         signupButton.setOnClickListener(v -> signUpUser());
 
-        loginLink.setOnClickListener(v ->
-                startActivity(new Intent(SignupActivity.this, LoginActivity.class)));
+        loginLink.setOnClickListener(v -> startActivity(new Intent(SignupActivity.this, LoginActivity.class)));
 
         avatarImage.setOnClickListener(v -> showImagePickerDialog());
     }
 
+    /**
+     * Displays a date picker dialog to let the user select their date of birth.
+     */
     private void showDatePicker() {
         new DatePickerDialog(SignupActivity.this,
                 (view, year, month, dayOfMonth) -> {
@@ -84,6 +95,10 @@ public class SignupActivity extends AppCompatActivity {
         ).show();
     }
 
+    /**
+     * Handles user sign-up by validating inputs and creating a new user account.
+     * If the sign-up is successful, the user data (including profile image) is saved in Firebase.
+     */
     private void signUpUser() {
         String username = usernameInput.getText().toString().trim();
         String email = emailInput.getText().toString().trim();
@@ -118,7 +133,7 @@ public class SignupActivity extends AppCompatActivity {
                         if (firebaseUser != null) {
                             Users user = new Users(username, email, dobDate);
 
-                            // 👇 Save image as blob if available
+                            // Save image as blob if available
                             if (profileBitmap != null) {
                                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                                 int quality = 80;
@@ -142,8 +157,7 @@ public class SignupActivity extends AppCompatActivity {
                                         startActivity(new Intent(SignupActivity.this, MainActivity.class));
                                         finish();
                                     })
-                                    .addOnFailureListener(e ->
-                                            Toast.makeText(this, "Failed to save user data: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                                    .addOnFailureListener(e -> Toast.makeText(this, "Failed to save user data: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                         }
                     } else {
                         Toast.makeText(this, "Sign Up Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
@@ -151,6 +165,9 @@ public class SignupActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Displays an alert dialog for the user to choose their profile picture from either the gallery or by taking a new picture.
+     */
     private void showImagePickerDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Select Profile Picture")
@@ -160,16 +177,28 @@ public class SignupActivity extends AppCompatActivity {
                 }).show();
     }
 
+    /**
+     * Starts an intent to pick an image from the device's gallery.
+     */
     private void pickImageFromGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         startActivityForResult(intent, REQUEST_GALLERY);
     }
 
+    /**
+     * Starts an intent to capture an image using the device's camera.
+     */
     private void captureImageFromCamera() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         startActivityForResult(intent, REQUEST_CAMERA);
     }
 
+    /**
+     * Handles the result from the image picker or camera. It processes the selected or captured image and updates the profile picture.
+     * @param requestCode The request code for the image picker or camera action.
+     * @param resultCode The result code of the activity.
+     * @param data The intent data containing the image.
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
