@@ -79,35 +79,40 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
 
         filterButton.setOnClickListener(v -> showFilterOptions());
 
+        // Modified: When launching the map, clear heavy image/voice data and ensure weather is updated.
         mapButton.setOnClickListener(v -> {
             for (Mood mood : moodList) {
                 mood.setVoiceNoteBlob(null);
                 mood.setImage(null);
+                // If weather is not available and location is set, trigger an update.
+                if ((mood.getWeather() == null || mood.getWeather().isEmpty()) &&
+                        (mood.getLatitude() != 0 || mood.getLongitude() != 0)) {
+                    mood.updateWeather();
+                }
             }
             Intent intent = new Intent(requireContext(), MapActivity.class);
             intent.putExtra("mood_list", moodList);
             startActivity(intent);
-
         });
 
         return view;
     }
 
-    // ✅ Launch AddMoodFragment with direct listener
+    // Launch AddMoodFragment with direct listener.
     public void openAddMoodDialog() {
         AddMoodFragment addMoodFragment = new AddMoodFragment();
-        addMoodFragment.setListener(this); // Pass self as listener
+        addMoodFragment.setListener(this); // Pass self as listener.
         addMoodFragment.show(getChildFragmentManager(), "Add Mood");
     }
 
-    // ✅ Launch EditMoodFragment with direct listener
+    // Launch EditMoodFragment with direct listener.
     public void openEditMoodDialog(Mood mood) {
         EditMoodFragment editMoodFragment = EditMoodFragment.newInstance(mood);
-        editMoodFragment.setListener(this); // Pass self as listener
+        editMoodFragment.setListener(this); // Pass self as listener.
         editMoodFragment.show(getChildFragmentManager(), "Edit Mood");
     }
 
-    // ✅ Listener implementations (instead of MainActivity)
+    // Listener implementations.
     @Override
     public void AddMood(Mood mood) {
         if (moodProvider != null) {
@@ -150,10 +155,18 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
                 .setTitle("Filter Moods")
                 .setItems(options, (dialog, which) -> {
                     switch (which) {
-                        case 0: moodProvider.loadAllMoods(); break;
-                        case 1: moodProvider.filterByRecentWeek(); break;
-                        case 2: showEmotionFilterDialog(); break;
-                        case 3: showReasonFilterDialog(); break;
+                        case 0:
+                            moodProvider.loadAllMoods();
+                            break;
+                        case 1:
+                            moodProvider.filterByRecentWeek();
+                            break;
+                        case 2:
+                            showEmotionFilterDialog();
+                            break;
+                        case 3:
+                            showReasonFilterDialog();
+                            break;
                     }
                 }).show();
     }
@@ -161,7 +174,9 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
     private void showEmotionFilterDialog() {
         Mood.EmotionalState[] values = Mood.EmotionalState.values();
         String[] emotionNames = new String[values.length];
-        for (int i = 0; i < values.length; i++) emotionNames[i] = values[i].name();
+        for (int i = 0; i < values.length; i++) {
+            emotionNames[i] = values[i].name();
+        }
 
         new AlertDialog.Builder(requireContext())
                 .setTitle("Select Emotion")
@@ -178,7 +193,9 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
                 .setView(input)
                 .setPositiveButton("Filter", (dialog, which) -> {
                     String keyword = input.getText().toString().trim();
-                    if (!keyword.isEmpty()) moodProvider.filterByReasonContains(keyword);
+                    if (!keyword.isEmpty()) {
+                        moodProvider.filterByReasonContains(keyword);
+                    }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
