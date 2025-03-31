@@ -68,6 +68,8 @@ public class ProfileFragment extends Fragment {
         saveButton = view.findViewById(R.id.saveButton);
         logoutButton = view.findViewById(R.id.logoutButton);
         avatarImage = view.findViewById(R.id.avatarImage);
+        ImageView backButton = view.findViewById(R.id.backButton);
+        Button editButton = view.findViewById(R.id.editButton);
 
 
         mAuth = FirebaseAuth.getInstance();
@@ -81,12 +83,26 @@ public class ProfileFragment extends Fragment {
         }
 
         saveButton.setOnClickListener(v -> updateUserProfile());
+
         avatarImage.setOnClickListener(v -> showImagePickerDialog());
 
         logoutButton.setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
             startActivity(new Intent(requireContext(), LoginActivity.class));
             requireActivity().finish();
+        });
+
+        backButton.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), MainActivity.class);
+            startActivity(intent);
+            requireActivity().finish();
+        });
+
+        editButton.setOnClickListener(v -> {
+            usernameEditText.setEnabled(true);
+            dobEditText.setEnabled(true);
+            saveButton.setVisibility(View.VISIBLE);
+            editButton.setVisibility(View.GONE);
         });
 
         dobEditText.setOnClickListener(v -> showDatePicker());
@@ -137,15 +153,47 @@ public class ProfileFragment extends Fragment {
         String newUsername = usernameEditText.getText().toString().trim();
         String email = emailEditText.getText().toString();
 
-        Users updatedUser = new Users(newUsername, email, selectedDOB);
-        updatedUser.setProfileBitmap(profileBitmap);
+        if (newUsername.isEmpty()) {
+            Toast.makeText(requireContext(), "Username cannot be empty", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        firestore.collection("Users")
+                .whereEqualTo("username", newUsername)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    boolean usernameTaken = false;
 
-        firestore.collection("Users").document(firebaseUser.getUid())
-                .set(updatedUser, SetOptions.merge())
-                .addOnSuccessListener(aVoid ->
-                        Toast.makeText(requireContext(), "Profile Updated", Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e ->
-                        Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_SHORT).show());
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        for (var doc : queryDocumentSnapshots.getDocuments()) {
+                            if (!doc.getId().equals(firebaseUser.getUid())) {
+                                usernameTaken = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (usernameTaken) {
+                        Toast.makeText(requireContext(), "Username already taken", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Users updatedUser = new Users(newUsername, email, selectedDOB);
+                        updatedUser.setProfileBitmap(profileBitmap);
+
+                        firestore.collection("Users").document(firebaseUser.getUid())
+                                .set(updatedUser, SetOptions.merge())
+                                .addOnSuccessListener(aVoid -> {
+                                    Toast.makeText(requireContext(), "Profile Updated", Toast.LENGTH_SHORT).show();
+                                    usernameEditText.setEnabled(false);
+                                    dobEditText.setEnabled(false);
+                                    saveButton.setVisibility(View.GONE);
+                                    requireView().findViewById(R.id.editButton).setVisibility(View.VISIBLE);
+                                })
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_SHORT).show());
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Error checking username uniqueness", Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void showImagePickerDialog() {

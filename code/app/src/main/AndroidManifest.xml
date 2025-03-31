@@ -41,7 +41,6 @@
         <activity android:name=".MainActivity" android:exported="true"/>
         <activity android:name=".SignupActivity" android:exported="true"/>
         <activity android:name=".ViewUserProfile"/>
-        <activity android:name=".FollowedMoodActivity"/>
         <activity android:name=".MapActivity"/>
 
     </application>

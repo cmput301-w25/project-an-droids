@@ -11,7 +11,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- Mood Image -->
         <ImageView
             android:id="@+id/detailImage"
             android:layout_width="0dp"
@@ -23,7 +22,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Emoji -->
         <TextView
             android:id="@+id/detailEmoji"
             android:layout_width="wrap_content"
@@ -35,7 +33,6 @@
             android:layout_marginTop="8dp"
             android:layout_marginBottom="4dp" />
 
-        <!-- Emotion -->
         <TextView
             android:id="@+id/detailEmotion"
             android:layout_width="wrap_content"
@@ -48,7 +45,6 @@
             app:layout_constraintBaseline_toBaselineOf="@id/detailEmoji"
             android:layout_marginStart="8dp" />
 
-        <!-- Reason Label -->
         <TextView
             android:id="@+id/reasonLabel"
             android:layout_width="wrap_content"
@@ -61,7 +57,6 @@
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="16dp" />
 
-        <!-- Reason Text -->
         <TextView
             android:id="@+id/detailReason"
             android:layout_width="0dp"
@@ -73,7 +68,6 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginBottom="12dp" />
 
-        <!-- Date -->
         <TextView
             android:id="@+id/detailDate"
             android:layout_width="wrap_content"
@@ -84,7 +78,6 @@
             app:layout_constraintTop_toBottomOf="@id/detailReason"
             app:layout_constraintStart_toStartOf="parent" />
 
-        <!-- Time -->
         <TextView
             android:id="@+id/detailTime"
             android:layout_width="wrap_content"
@@ -95,7 +88,6 @@
             app:layout_constraintTop_toBottomOf="@id/detailReason"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Social -->
         <TextView
             android:id="@+id/detailSocial"
             android:layout_width="0dp"
@@ -108,7 +100,6 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="8dp" />
 
-        <!-- Privacy -->
         <TextView
             android:id="@+id/detailPrivacy"
             android:layout_width="0dp"
@@ -121,7 +112,19 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="4dp" />
 
-        <!-- Location -->
+        <TextView
+            android:id="@+id/detailUsername"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="👤 Username"
+            android:textColor="#333"
+            android:textSize="15sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/detailLocation" />
+
         <TextView
             android:id="@+id/detailLocation"
             android:layout_width="0dp"
@@ -134,9 +137,6 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="6dp" />
 
-        <!-- Voice Note Button -->
-
-        <!-- Add Comment -->
 
         <TextView
             android:id="@+id/detailWeather"
@@ -162,7 +162,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/detailLocation" />
 
-        <!-- View Comments -->
         <Button
             android:id="@+id/moodCommentButton"
             android:layout_width="0dp"
