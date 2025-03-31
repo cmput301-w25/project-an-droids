@@ -13,7 +13,7 @@
 
 ## Project Description
 
-This project is an Android application that enables users to share and interact with mood updates, as well as follow and engage with other users. The app allows users to view profiles, manage relationships (follow, request follow, unfollow), and listen to audio notes. The main goal is to provide a simple and engaging social platform where users can express their moods and communicate through voice recordings.
+This project is an Android application that enables users to share and interact with mood updates, as well as follow and engage with other users. The app allows users to view profiles, manage relationships (follow, request follow, unfollow), and listen to audio notes. The main goal is to provide a simple and engaging social platform where users can express their moods and communicate.
 
 ## Key Features
 
