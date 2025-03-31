@@ -17,30 +17,45 @@ import com.google.firebase.firestore.*;
 
 import java.util.*;
 
+/**
+ * Fragment for searching users and sending follow requests. Displays a search input and a list of
+ * users who can be followed or unfollowed based on their current follow status.
+ *
+ * <p>This fragment allows users to search for other users, view their profiles, and manage follow
+ * requests through dynamic updates using Firebase Firestore.</p>
+ */
 public class SearchFragment extends Fragment {
 
-    private EditText searchEditText;
-    private ListView searchResultsListView;
+    private EditText searchEditText; // Input field for search queries
+    private ListView searchResultsListView; // List view to display the search results
 
-    private final List<UserSearchItem> allUsersList = new ArrayList<>();
-    private final List<UserSearchItem> filteredUsersList = new ArrayList<>();
-    private final Set<String> seenUserIds = new HashSet<>();
+    private final List<UserSearchItem> allUsersList = new ArrayList<>(); // List of all users
+    private final List<UserSearchItem> filteredUsersList = new ArrayList<>(); // Filtered list based on search query
+    private final Set<String> seenUserIds = new HashSet<>(); // Set to track users already processed
 
-    private UserSearchAdapter searchAdapter;
+    private UserSearchAdapter searchAdapter; // Adapter to bind data to the list view
 
-    private FirebaseFirestore firestore;
-    private FirebaseAuth mAuth;
-    private FirebaseUser firebaseUser;
+    private FirebaseFirestore firestore; // Firestore instance to interact with the database
+    private FirebaseAuth mAuth; // Firebase authentication instance
+    private FirebaseUser firebaseUser; // Current authenticated Firebase user
 
-    private String currentUsername = "";
-    private String currentUserId = "";
+    private String currentUsername = ""; // Username of the current user
+    private String currentUserId = ""; // User ID of the current user
 
-    private List<String> followingList = new ArrayList<>();
-    private List<String> followRequestsList = new ArrayList<>();
+    private List<String> followingList = new ArrayList<>(); // List of users the current user is following
+    private List<String> followRequestsList = new ArrayList<>(); // List of follow requests made by the current user
 
-    private ListenerRegistration usersListener;
-    private ListenerRegistration currentUserLiveListener;
+    private ListenerRegistration usersListener; // Listener for changes to the users collection
+    private ListenerRegistration currentUserLiveListener; // Listener for real-time changes to the current user data
 
+    /**
+     * Creates and returns the view for the fragment. Inflates the layout for the search fragment.
+     *
+     * @param inflater The LayoutInflater object to inflate the view
+     * @param container The container that holds the fragment's UI
+     * @param savedInstanceState Bundle object containing saved state, if any
+     * @return The view for the fragment
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -48,6 +63,12 @@ public class SearchFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_search, container, false);
     }
 
+    /**
+     * Initializes the view components and sets up the search functionality.
+     *
+     * @param view The root view for the fragment
+     * @param savedInstanceState Bundle object containing saved state, if any
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         searchEditText = view.findViewById(R.id.searchEditText);
@@ -62,7 +83,7 @@ public class SearchFragment extends Fragment {
 
         if (firebaseUser != null) {
             currentUserId = firebaseUser.getUid();
-            fetchCurrentUserThenListen(); // 🧠 new flow
+            fetchCurrentUserThenListen();
         } else {
             Toast.makeText(requireContext(), "You must be logged in to search", Toast.LENGTH_SHORT).show();
             requireActivity().finish();
@@ -77,7 +98,9 @@ public class SearchFragment extends Fragment {
         });
     }
 
-    // 🧠 BLOCKING fetch + real-time after init
+    /**
+     * Fetches the current user's data from Firestore and listens for real-time updates.
+     */
     private void fetchCurrentUserThenListen() {
         firestore.collection("Users").document(currentUserId).get()
                 .addOnSuccessListener(snapshot -> {
@@ -90,16 +113,16 @@ public class SearchFragment extends Fragment {
                         followingList = (following != null) ? following : new ArrayList<>();
                         followRequestsList = (requests != null) ? requests : new ArrayList<>();
 
-                        // ✅ Start real-time user list after we KNOW we have follow data
                         startListeningToUsers();
-
-                        // ✅ Also set up live listener for follow updates
                         listenToCurrentUserLive();
                     }
                 })
                 .addOnFailureListener(e -> Toast.makeText(requireContext(), "Failed to load user", Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Listens for real-time updates to the current user's follow status.
+     */
     private void listenToCurrentUserLive() {
         currentUserLiveListener = firestore.collection("Users")
                 .document(currentUserId)
@@ -112,10 +135,13 @@ public class SearchFragment extends Fragment {
                     followingList = (following != null) ? following : new ArrayList<>();
                     followRequestsList = (requests != null) ? requests : new ArrayList<>();
 
-                    updateAllUserStates(); // Re-render follow buttons
+                    updateAllUserStates();
                 });
     }
 
+    /**
+     * Starts listening for real-time updates to the users collection.
+     */
     private void startListeningToUsers() {
         usersListener = firestore.collection("Users")
                 .addSnapshotListener((snapshots, e) -> {
@@ -134,7 +160,6 @@ public class SearchFragment extends Fragment {
 
                         seenUserIds.add(uid);
 
-                        // 🔍 Check this user's followers/followRequests
                         firestore.collection("Users").document(uid).get()
                                 .addOnSuccessListener(userDoc -> {
                                     UserSearchItem item = new UserSearchItem(username, uid);
@@ -157,6 +182,9 @@ public class SearchFragment extends Fragment {
                 });
     }
 
+    /**
+     * Updates the follow states for all users based on the current user's follow data.
+     */
     private void updateAllUserStates() {
         for (UserSearchItem item : allUsersList) {
             item.setState(getFollowState(item.getUserId()));
@@ -164,6 +192,12 @@ public class SearchFragment extends Fragment {
         filterUserList(searchEditText.getText().toString().trim());
     }
 
+    /**
+     * Determines the follow state of a user based on the current user's follow data.
+     *
+     * @param uid The user ID to check the follow state for
+     * @return The follow state of the user
+     */
     private UserSearchItem.FollowState getFollowState(String uid) {
         if (followingList.contains(uid)) {
             return UserSearchItem.FollowState.UNFOLLOW;
@@ -174,6 +208,11 @@ public class SearchFragment extends Fragment {
         }
     }
 
+    /**
+     * Filters the list of users based on the search query.
+     *
+     * @param query The search query to filter the user list
+     */
     private void filterUserList(String query) {
         filteredUsersList.clear();
         if (!query.isEmpty()) {
@@ -186,6 +225,12 @@ public class SearchFragment extends Fragment {
         searchAdapter.notifyDataSetChanged();
     }
 
+    /**
+     * Sends a follow request to a user.
+     *
+     * @param targetUserId The ID of the user to send the follow request to
+     * @param item The UserSearchItem representing the user to follow
+     */
     private void sendFollowRequest(String targetUserId, UserSearchItem item) {
         firestore.collection("Users")
                 .document(targetUserId)
@@ -199,6 +244,12 @@ public class SearchFragment extends Fragment {
                         "Error sending request: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Unfollows a user.
+     *
+     * @param targetUserId The ID of the user to unfollow
+     * @param item The UserSearchItem representing the user to unfollow
+     */
     private void unfollowUser(String targetUserId, UserSearchItem item) {
         firestore.collection("Users").document(targetUserId)
                 .update("followers", FieldValue.arrayRemove(currentUserId))
@@ -215,6 +266,9 @@ public class SearchFragment extends Fragment {
                         Toast.makeText(requireContext(), "Error unfollowing: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Adapter class to display the user search results in the ListView.
+     */
     private class UserSearchAdapter extends BaseAdapter {
 
         private final List<UserSearchItem> items;
@@ -227,6 +281,14 @@ public class SearchFragment extends Fragment {
         @Override public Object getItem(int position) { return items.get(position); }
         @Override public long getItemId(int position) { return position; }
 
+        /**
+         * Creates the view for each item in the user search list.
+         *
+         * @param position The position of the item to display
+         * @param convertView The recycled view to reuse
+         * @param parent The parent ViewGroup
+         * @return The view for the item at the given position
+         */
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             if (convertView == null) {
@@ -280,6 +342,9 @@ public class SearchFragment extends Fragment {
         }
     }
 
+    /**
+     * Model class for representing a user in the search results.
+     */
     private static class UserSearchItem {
 
         public enum FollowState {
@@ -305,6 +370,10 @@ public class SearchFragment extends Fragment {
         public void setState(FollowState state) { this.state = state; }
     }
 
+    /**
+     * Called when the fragment's view is being destroyed. This method removes the listeners
+     * for real-time updates to the users and current user data to avoid memory leaks.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();
