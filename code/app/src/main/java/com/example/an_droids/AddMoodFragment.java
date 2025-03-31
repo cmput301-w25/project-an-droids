@@ -125,6 +125,22 @@ public class AddMoodFragment extends DialogFragment {
                 .setPositiveButton("Add", (dialog, which) -> onSubmit())
                 .create();
     }
+    @Override
+    public void onStart() {
+        super.onStart();
+        // Retrieve the dialog and change the text color of both positive and negative buttons.
+        AlertDialog dialog = (AlertDialog) getDialog();
+        if (dialog != null) {
+            Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+            if (positiveButton != null) {
+                positiveButton.setTextColor(android.graphics.Color.WHITE);
+            }
+            if (negativeButton != null) {
+                negativeButton.setTextColor(android.graphics.Color.WHITE);
+            }
+        }
+    }
 
     private void onSubmit() {
         String selectedEmotion = emotionSpinner.getSelectedItem().toString();
