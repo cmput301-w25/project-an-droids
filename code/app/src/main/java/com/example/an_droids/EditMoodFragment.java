@@ -5,14 +5,13 @@ import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.provider.MediaStore;
 import android.text.InputFilter;
 import android.view.LayoutInflater;
@@ -43,8 +42,6 @@ public class EditMoodFragment extends DialogFragment {
     private EditText timeEditText;
     private EditText reasonEditText;
     private ImageView selectImage;
-    // New: TextView for displaying weather info
-    private TextView weatherText;
     private Bitmap image;
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     private final SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm", Locale.getDefault());
@@ -55,9 +52,6 @@ public class EditMoodFragment extends DialogFragment {
 
     private VoiceNoteUtil voiceUtil = new VoiceNoteUtil();
     private byte[] voiceNoteBytes = null;
-
-    // Store the mood being edited as a field.
-    private Mood mood;
 
     public static EditMoodFragment newInstance(Mood mood) {
         EditMoodFragment fragment = new EditMoodFragment();
@@ -83,19 +77,17 @@ public class EditMoodFragment extends DialogFragment {
         timeEditText = view.findViewById(R.id.timeEditText);
         reasonEditText = view.findViewById(R.id.reasonEditText);
         selectImage = view.findViewById(R.id.uploadImage);
-        // New: initialize weather text view
-        weatherText = view.findViewById(R.id.weatherText);
         Button recordButton = view.findViewById(R.id.recordVoiceButton);
         Button playButton = view.findViewById(R.id.playVoiceButton);
 
         reasonEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(200)});
 
-        mood = (Mood) getArguments().getSerializable("mood");
+        Mood mood = (Mood) getArguments().getSerializable("mood");
         if (mood == null) {
             throw new IllegalArgumentException("No Mood passed to EditMoodFragment");
         }
 
-        // Restore date/time from mood's timestamp.
+        // Restore date/time
         Date timestamp = mood.getTimestamp();
         if (timestamp != null) {
             calendar.setTime(timestamp);
@@ -103,31 +95,19 @@ public class EditMoodFragment extends DialogFragment {
         dateEditText.setText(dateFormatter.format(calendar.getTime()));
         timeEditText.setText(timeFormatter.format(calendar.getTime()));
 
-        // Restore existing mood values.
+        // Restore mood values
         reasonEditText.setText(mood.getReason());
         if (mood.getImage() != null) {
             image = mood.getImage();
             selectImage.setImageBitmap(image);
         }
-        // Show existing weather if available; otherwise, attempt update.
-        if (mood.getWeather() != null && !mood.getWeather().isEmpty()) {
-            weatherText.setText("Weather: " + mood.getWeather());
-        } else {
-            weatherText.setText("Weather: Fetching...");
-        }
-        // If the mood has a valid location, refresh weather info.
-        if (mood.getLatitude() != 0 || mood.getLongitude() != 0) {
-            fetchWeatherForMood();
-        } else {
-            weatherText.setText("Weather: Unavailable");
-        }
 
-        // Load existing voice note blob if it exists.
+        // Load existing voice note blob if it exists
         if (mood.getVoiceNoteBlob() != null) {
             voiceNoteBytes = mood.getVoiceNoteBlob().toBytes();
         }
 
-        // Set spinner selections.
+        // Set spinner selections
         setSpinnerSelection(emotionSpinner, mood.getEmotion().toString());
         setSpinnerSelection(socialSituationSpinner, mood.getSocialSituation());
         setSpinnerSelection(privacySpinner, capitalize(mood.getPrivacy().name()));
@@ -136,7 +116,7 @@ public class EditMoodFragment extends DialogFragment {
         timeEditText.setOnClickListener(v -> showTimePickerDialog());
         selectImage.setOnClickListener(v -> showImagePickerDialog());
 
-        // Voice recording button.
+        // Voice recording button
         recordButton.setOnClickListener(v -> {
             if (recordButton.getText().toString().contains("🎙")) {
                 if (ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.RECORD_AUDIO)
@@ -162,7 +142,7 @@ public class EditMoodFragment extends DialogFragment {
             }
         });
 
-        // Voice playback button.
+        // Voice playback button
         playButton.setOnClickListener(v -> {
             if (voiceNoteBytes != null) {
                 try {
@@ -185,7 +165,7 @@ public class EditMoodFragment extends DialogFragment {
                     String reason = reasonEditText.getText().toString();
                     Date newDate = calendar.getTime();
 
-                    // Compress image if necessary.
+                    // Compress image
                     if (image != null) {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         int quality = 80;
@@ -204,7 +184,7 @@ public class EditMoodFragment extends DialogFragment {
                         image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
                     }
 
-                    // Update mood with new values.
+                    // Update mood
                     mood.setEmotion(selectedEmotion);
                     mood.setTimestamp(newDate);
                     mood.setReason(reason);
@@ -221,21 +201,6 @@ public class EditMoodFragment extends DialogFragment {
                     listener.EditMood(mood);
                 })
                 .create();
-    }
-
-    private void fetchWeatherForMood() {
-        // Use the mood's existing location to update weather info.
-        // Calling updateWeather will trigger an asynchronous update.
-        mood.updateWeather();
-        weatherText.setText("Weather: Fetching...");
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            String weatherInfo = mood.getWeather();
-            if (weatherInfo == null || weatherInfo.isEmpty()) {
-                weatherText.setText("Weather: Unavailable");
-            } else {
-                weatherText.setText("Weather: " + weatherInfo);
-            }
-        }, 3000);
     }
 
     private void showDatePickerDialog() {
