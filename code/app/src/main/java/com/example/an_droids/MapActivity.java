@@ -11,6 +11,7 @@ import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
@@ -31,7 +32,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class MapActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private ImageView filterButton;
@@ -79,9 +80,42 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                         LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 13f));
                     }
+                    loadCurrentUserMoods();
                 });
 
         // No marker display until filter is selected
+    }
+    private void loadCurrentUserMoods() {
+        mMap.clear();
+        // If a mood list was passed in, use it; otherwise, fetch from Firestore
+        if (moodList != null && !moodList.isEmpty()) {
+            for (Mood mood : moodList) {
+                if (mood.getLatitude() != 0 && mood.getLongitude() != 0) {
+                    LatLng moodLocation = new LatLng(mood.getLatitude(), mood.getLongitude());
+                    String title = mood.getEmotion().name() + " " + mood.getEmotionEmoji();
+                    mMap.addMarker(new MarkerOptions().position(moodLocation).title(title));
+                }
+            }
+        } else {
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (currentUser == null) return;
+
+            FirebaseFirestore.getInstance()
+                    .collection("Users")
+                    .document(currentUser.getUid())
+                    .collection("Moods")
+                    .get()
+                    .addOnSuccessListener(querySnapshot -> {
+                        for (QueryDocumentSnapshot doc : querySnapshot) {
+                            Mood mood = doc.toObject(Mood.class);
+                            if (mood.getLatitude() != 0 && mood.getLongitude() != 0) {
+                                LatLng moodLocation = new LatLng(mood.getLatitude(), mood.getLongitude());
+                                String title = mood.getEmotion().name() + " " + mood.getEmotionEmoji();
+                                mMap.addMarker(new MarkerOptions().position(moodLocation).title(title));
+                            }
+                        }
+                    });
+        }
     }
 
     private void showTopLevelFilterDialog() {

@@ -14,6 +14,8 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.text.InputFilter;
 import android.util.Log;
@@ -33,7 +35,6 @@ import com.google.firebase.firestore.Blob;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
 
@@ -43,7 +44,7 @@ public class AddMoodFragment extends DialogFragment {
     private Spinner emotionSpinner, socialSituationSpinner, privacySpinner;
     private EditText reasonEditText;
     private ImageView selectImage, locationButton;
-    private TextView locationText;
+    private TextView locationText, weatherText; // New: weather text view to display current weather info
     private Bitmap image;
     private Location currentLocation;
 
@@ -69,17 +70,19 @@ public class AddMoodFragment extends DialogFragment {
         privacySpinner = view.findViewById(R.id.privacySpinner);
         locationButton = view.findViewById(R.id.locationButton);
         locationText = view.findViewById(R.id.locationText);
+        weatherText = view.findViewById(R.id.weatherText); // Initialize the weather text view
         Button recordButton = view.findViewById(R.id.recordVoiceButton);
         Button playButton = view.findViewById(R.id.playVoiceButton);
 
         reasonEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(200)});
         selectImage.setOnClickListener(v -> showImagePickerDialog());
         locationButton.setOnClickListener(v -> fetchLocation());
+
         recordButton.setOnClickListener(v -> {
             if (recordButton.getText().toString().contains("🎙")) {
-                if (ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.RECORD_AUDIO)
+                if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO)
                         != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(requireActivity(), new String[]{android.Manifest.permission.RECORD_AUDIO}, 201);
+                    ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, 201);
                     Toast.makeText(getContext(), "Please grant microphone permission", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -100,7 +103,6 @@ public class AddMoodFragment extends DialogFragment {
             }
         });
 
-        // Voice playback button
         playButton.setOnClickListener(v -> {
             if (voiceNoteBytes != null && voiceNoteBytes.length > 0) {
                 Log.d("VOICE", "Playback starting, bytes = " + voiceNoteBytes.length);
@@ -157,13 +159,15 @@ public class AddMoodFragment extends DialogFragment {
             image = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
         }
 
-        // Create Mood object
+        // Create Mood object.
+        // Note: The Mood constructor sets the timestamp to new Date() if null is passed.
         Mood newMood = new Mood(selectedEmotion, reasonText, null, image, selectedSocialSituation, Mood.Privacy.valueOf(selectedPrivacy));
 
-        // Add owner ID
+        // Set owner ID.
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         newMood.setOwnerId(currentUserId);
 
+        // Set location (which in turn triggers updateWeather in the Mood class).
         if (currentLocation != null) {
             newMood.setLatitude(currentLocation.getLatitude());
             newMood.setLongitude(currentLocation.getLongitude());
@@ -177,6 +181,7 @@ public class AddMoodFragment extends DialogFragment {
             newMood.setVoiceNoteBlob(Blob.fromBytes(voiceNoteBytes));
         }
 
+        // Pass the new mood to the listener.
         try {
             listener.AddMood(newMood);
         } catch (Exception e) {
@@ -198,7 +203,7 @@ public class AddMoodFragment extends DialogFragment {
                     if (location != null) {
                         currentLocation = location;
 
-                        // Run geocoder off main thread
+                        // Update the address using Geocoder off the main thread.
                         new Thread(() -> {
                             Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
                             try {
@@ -221,7 +226,6 @@ public class AddMoodFragment extends DialogFragment {
 
                                     String fullAddress = addressBuilder.toString();
 
-                                    // Update UI on the main thread
                                     requireActivity().runOnUiThread(() -> {
                                         locationText.setText(fullAddress);
                                         locationText.setTag(fullAddress);
@@ -233,11 +237,43 @@ public class AddMoodFragment extends DialogFragment {
                             }
                         }).start();
 
+                        // New: Fetch weather for this location and update the weatherText view.
+                        fetchWeatherForLocation(location);
+
                     } else {
                         locationText.setText("Location: Unavailable");
+                        weatherText.setText("Weather: Unavailable");
                     }
                 })
-                .addOnFailureListener(e -> locationText.setText("Failed to get location"));
+                .addOnFailureListener(e -> {
+                    locationText.setText("Failed to get location");
+                    weatherText.setText("Weather: Unavailable");
+                });
+    }
+
+    /**
+     * Uses a temporary Mood object to fetch current weather based on the provided location.
+     * Once the weather is retrieved asynchronously (via the Mood updateWeather method),
+     * the weatherText view is updated after a short delay.
+     */
+    private void fetchWeatherForLocation(Location location) {
+        // Create a temporary Mood to use its updateWeather feature.
+        Mood tempMood = new Mood();
+        tempMood.setLatitude(location.getLatitude());
+        tempMood.setLongitude(location.getLongitude());
+        // The setters trigger updateWeather asynchronously.
+        // Inform the user that weather is being fetched.
+        weatherText.setText("Weather: Fetching...");
+
+        // Use a Handler to post an update after a delay (adjust delay as needed).
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            String weatherInfo = tempMood.getWeather();
+            if (weatherInfo == null || weatherInfo.isEmpty()) {
+                weatherText.setText("Weather: Unavailable");
+            } else {
+                weatherText.setText("Weather: " + weatherInfo);
+            }
+        }, 3000); // wait 3 seconds for the API call to complete
     }
 
     private void showImagePickerDialog() {
