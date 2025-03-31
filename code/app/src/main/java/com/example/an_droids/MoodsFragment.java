@@ -17,6 +17,11 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 
+/**
+ * A fragment that displays and manages a list of moods for a user.
+ * This fragment provides options for filtering moods, adding new ones, editing existing ones,
+ * and deleting moods. It communicates with the {@link MoodProvider} to fetch and manipulate the data.
+ */
 public class MoodsFragment extends Fragment implements MoodDialogListener {
 
     private ListView moodListView;
@@ -27,10 +32,19 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
 
     private Button filterButton, mapButton, addMoodButton;
 
+    /**
+     * Required empty public constructor.
+     */
     public MoodsFragment() {
         // Required empty public constructor
     }
 
+    /**
+     * Creates a new instance of the fragment with the specified user ID.
+     *
+     * @param userId The user ID to load moods for.
+     * @return A new instance of the MoodsFragment.
+     */
     public static MoodsFragment newInstance(String userId) {
         MoodsFragment fragment = new MoodsFragment();
         Bundle args = new Bundle();
@@ -39,6 +53,15 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
         return fragment;
     }
 
+    /**
+     * Initializes the fragment's views and sets up listeners for interactions such as adding
+     * moods, deleting moods, and filtering moods.
+     *
+     * @param inflater           The LayoutInflater to inflate the fragment's view.
+     * @param container          The parent view that the fragment's UI will be attached to.
+     * @param savedInstanceState The previously saved state (if any).
+     * @return The root view for the fragment.
+     */
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_moods, container, false);
@@ -79,12 +102,10 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
 
         filterButton.setOnClickListener(v -> showFilterOptions());
 
-        // Modified: When launching the map, clear heavy image/voice data and ensure weather is updated.
         mapButton.setOnClickListener(v -> {
             for (Mood mood : moodList) {
                 mood.setVoiceNoteBlob(null);
                 mood.setImage(null);
-                // If weather is not available and location is set, trigger an update.
                 if ((mood.getWeather() == null || mood.getWeather().isEmpty()) &&
                         (mood.getLatitude() != 0 || mood.getLongitude() != 0)) {
                     mood.updateWeather();
@@ -98,21 +119,31 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
         return view;
     }
 
-    // Launch AddMoodFragment with direct listener.
+    /**
+     * Opens a dialog to add a new mood.
+     */
     public void openAddMoodDialog() {
         AddMoodFragment addMoodFragment = new AddMoodFragment();
-        addMoodFragment.setListener(this); // Pass self as listener.
+        addMoodFragment.setListener(this);
         addMoodFragment.show(getChildFragmentManager(), "Add Mood");
     }
 
-    // Launch EditMoodFragment with direct listener.
+    /**
+     * Opens a dialog to edit an existing mood.
+     *
+     * @param mood The mood to be edited.
+     */
     public void openEditMoodDialog(Mood mood) {
         EditMoodFragment editMoodFragment = EditMoodFragment.newInstance(mood);
-        editMoodFragment.setListener(this); // Pass self as listener.
+        editMoodFragment.setListener(this);
         editMoodFragment.show(getChildFragmentManager(), "Edit Mood");
     }
 
-    // Listener implementations.
+    /**
+     * Listener method that handles adding a new mood.
+     *
+     * @param mood The mood to be added.
+     */
     @Override
     public void AddMood(Mood mood) {
         if (moodProvider != null) {
@@ -121,6 +152,11 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
         }
     }
 
+    /**
+     * Listener method that handles editing an existing mood.
+     *
+     * @param mood The mood to be edited.
+     */
     @Override
     public void EditMood(Mood mood) {
         if (moodProvider != null) {
@@ -129,6 +165,9 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
         }
     }
 
+    /**
+     * Loads the moods for the user from the {@link MoodProvider}.
+     */
     private void loadMoods() {
         moodList.clear();
         moodList.addAll(moodProvider.getMoods());
@@ -149,6 +188,9 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
         });
     }
 
+    /**
+     * Displays options for filtering the moods.
+     */
     private void showFilterOptions() {
         String[] options = {"All", "Recent Week", "By Emotion", "By Reason"};
         new AlertDialog.Builder(requireContext())
@@ -171,6 +213,9 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
                 }).show();
     }
 
+    /**
+     * Displays a dialog for selecting an emotion filter.
+     */
     private void showEmotionFilterDialog() {
         Mood.EmotionalState[] values = Mood.EmotionalState.values();
         String[] emotionNames = new String[values.length];
@@ -185,6 +230,9 @@ public class MoodsFragment extends Fragment implements MoodDialogListener {
                 ).show();
     }
 
+    /**
+     * Displays a dialog for filtering moods by reason.
+     */
     private void showReasonFilterDialog() {
         EditText input = new EditText(requireContext());
         input.setHint("Enter keyword");
