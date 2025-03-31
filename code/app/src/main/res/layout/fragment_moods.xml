@@ -6,13 +6,11 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
-    <!-- Content Container -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="8dp">
 
-        <!-- Mood List -->
         <ListView
             android:id="@+id/moodList"
             android:layout_width="0dp"
@@ -26,7 +24,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Bottom Control Row -->
         <LinearLayout
             android:id="@+id/bottomControls"
             android:layout_width="0dp"
@@ -76,6 +73,5 @@
                 app:iconTint="@color/white" />
         </LinearLayout>
 
-        <!-- Add Mood Floating Button -->
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
