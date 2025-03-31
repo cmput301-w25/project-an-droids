@@ -21,6 +21,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Fragment for managing and displaying the user's followers and follow requests.
+ */
 public class FollowersFragment extends Fragment {
     private RecyclerView followersRecyclerView;
     private FollowAdapter followersAdapter;
@@ -38,8 +41,17 @@ public class FollowersFragment extends Fragment {
     private FirebaseAuth mAuth;
     private FirebaseUser currentUser;
 
+    /**
+     * Default constructor.
+     */
     public FollowersFragment() {}
 
+    /**
+     * Creates a new instance of FollowersFragment with a specified user ID.
+     *
+     * @param userId The ID of the user whose followers are displayed.
+     * @return A new instance of FollowersFragment.
+     */
     public static FollowersFragment newInstance(String userId) {
         FollowersFragment fragment = new FollowersFragment();
         Bundle args = new Bundle();
@@ -48,6 +60,14 @@ public class FollowersFragment extends Fragment {
         return fragment;
     }
 
+    /**
+     * Called to create and return the fragment's view hierarchy.
+     *
+     * @param inflater  The LayoutInflater used to inflate views.
+     * @param container The parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed.
+     * @return The root view of the fragment.
+     */
     @Override
     public View onCreateView(
             @NonNull LayoutInflater inflater,
@@ -119,6 +139,9 @@ public class FollowersFragment extends Fragment {
                 });
     }
 
+    /**
+     * Loads the list of followers from Firestore.
+     */
     private void loadFollowers() {
         if (userId == null) return;
 
@@ -136,6 +159,11 @@ public class FollowersFragment extends Fragment {
                         Log.e("FollowersFragment", "Error loading followers: " + e.getMessage()));
     }
 
+    /**
+     * Fetches usernames of the provided list of user IDs.
+     *
+     * @param userIds List of user IDs to fetch usernames for.
+     */
     private void fetchFollowerUsernames(List<String> userIds) {
         // Use a Set to ensure no duplicates
         Set<String> seenUserIds = new HashSet<>();
@@ -190,6 +218,11 @@ public class FollowersFragment extends Fragment {
         }
     }
 
+    /**
+     * Removes a follower from the user's follower list.
+     *
+     * @param position The position of the follower in the list.
+     */
     private void removeFollower(int position) {
         if (currentUser == null || followerUserIds == null
                 || position < 0 || position >= followerUserIds.size()) {
@@ -216,6 +249,9 @@ public class FollowersFragment extends Fragment {
                         Log.e("FollowersFragment", "Error removing from my followers: " + e.getMessage()));
     }
 
+    /**
+     * Loads the follow requests from Firestore.
+     */
     private void loadRequests() {
         if (currentUser == null) return;
 
@@ -234,6 +270,11 @@ public class FollowersFragment extends Fragment {
                 });
     }
 
+    /**
+     * Fetches usernames of users who sent follow requests.
+     *
+     * @param userIds List of user IDs who sent requests.
+     */
     private void fetchRequestsUsernames(List<String> userIds) {
         requestUsernames.clear();
         requestUserIds.clear();
@@ -268,6 +309,11 @@ public class FollowersFragment extends Fragment {
         }
     }
 
+    /**
+     * Accepts a follow request and updates Firestore accordingly.
+     *
+     * @param position The position of the request in the list.
+     */
     private void acceptRequest(int position) {
         if (currentUser == null || requestUserIds == null
                 || position < 0 || position >= requestUserIds.size()) {
@@ -300,6 +346,11 @@ public class FollowersFragment extends Fragment {
                         Log.e("FollowersFragment", "Error removing from followRequests: " + e.getMessage()));
     }
 
+    /**
+     * Rejects a follow request and removes it from Firestore.
+     *
+     * @param position The position of the request in the list.
+     */
     private void rejectRequest(int position) {
         if (currentUser == null || requestUserIds == null
                 || position < 0 || position >= requestUserIds.size()) {
