@@ -30,36 +30,65 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+/**
+ * A Fragment to manage the user's profile, including their username, email, date of birth (DOB),
+ * and profile picture. It allows users to update their profile details and log out.
+ */
 public class ProfileFragment extends Fragment {
 
+    // UI elements
     private EditText usernameEditText, emailEditText, dobEditText;
     private Button saveButton, logoutButton;
 
+    // Firebase-related objects
     private FirebaseAuth mAuth;
     private FirebaseFirestore firestore;
     private FirebaseUser firebaseUser;
 
+    // Date formatting and selection
     private final Calendar calendar = Calendar.getInstance();
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
     private Date selectedDOB;
+
+    // Profile picture
     private ImageView avatarImage;
     private static final int REQUEST_IMAGE_GALLERY = 101;
     private static final int REQUEST_IMAGE_CAMERA = 102;
     private static final int MAX_IMAGE_SIZE = 65536;
     private Bitmap profileBitmap;
 
+    /**
+     * Creates a new instance of the ProfileFragment.
+     *
+     * @param userId the ID of the user whose profile is being displayed.
+     * @return A new instance of ProfileFragment.
+     */
     public static ProfileFragment newInstance(String userId) {
         ProfileFragment fragment = new ProfileFragment();
         return fragment;
     }
 
+    /**
+     * Inflates the layout for the profile fragment.
+     *
+     * @param inflater The LayoutInflater object to inflate views.
+     * @param container The parent view that the fragment's UI will be attached to.
+     * @param savedInstanceState The saved instance state.
+     * @return The root view of the inflated layout.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_profile, container, false); // Reuse layout ✅
+        return inflater.inflate(R.layout.fragment_profile, container, false);
     }
 
+    /**
+     * Initializes the profile fragment's views and setup click listeners.
+     *
+     * @param view The root view for the fragment's UI.
+     * @param savedInstanceState The saved instance state.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         usernameEditText = view.findViewById(R.id.usernameEditText);
@@ -71,27 +100,23 @@ public class ProfileFragment extends Fragment {
         ImageView backButton = view.findViewById(R.id.backButton);
         Button editButton = view.findViewById(R.id.editButton);
 
-
         mAuth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
         firebaseUser = mAuth.getCurrentUser();
 
-        emailEditText.setEnabled(false);
+        emailEditText.setEnabled(false); // Email is read-only
 
         if (firebaseUser != null) {
             loadUserProfile();
         }
 
         saveButton.setOnClickListener(v -> updateUserProfile());
-
         avatarImage.setOnClickListener(v -> showImagePickerDialog());
-
         logoutButton.setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
             startActivity(new Intent(requireContext(), LoginActivity.class));
             requireActivity().finish();
         });
-
         backButton.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), MainActivity.class);
             startActivity(intent);
@@ -108,6 +133,9 @@ public class ProfileFragment extends Fragment {
         dobEditText.setOnClickListener(v -> showDatePicker());
     }
 
+    /**
+     * Opens a DatePickerDialog to select the user's date of birth.
+     */
     private void showDatePicker() {
         new DatePickerDialog(requireContext(),
                 (view, year, month, dayOfMonth) -> {
@@ -123,6 +151,9 @@ public class ProfileFragment extends Fragment {
         ).show();
     }
 
+    /**
+     * Loads the user's profile information from Firestore and populates the UI.
+     */
     private void loadUserProfile() {
         firestore.collection("Users").document(firebaseUser.getUid()).get()
                 .addOnSuccessListener(documentSnapshot -> {
@@ -140,10 +171,12 @@ public class ProfileFragment extends Fragment {
                         }
                     }
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(requireContext(), "Failed to load profile", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> Toast.makeText(requireContext(), "Failed to load profile", Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Updates the user's profile in Firestore with the provided details.
+     */
     private void updateUserProfile() {
         if (firebaseUser == null) {
             Toast.makeText(requireContext(), "User not authenticated", Toast.LENGTH_SHORT).show();
@@ -157,6 +190,7 @@ public class ProfileFragment extends Fragment {
             Toast.makeText(requireContext(), "Username cannot be empty", Toast.LENGTH_SHORT).show();
             return;
         }
+
         firestore.collection("Users")
                 .whereEqualTo("username", newUsername)
                 .get()
@@ -187,8 +221,7 @@ public class ProfileFragment extends Fragment {
                                     saveButton.setVisibility(View.GONE);
                                     requireView().findViewById(R.id.editButton).setVisibility(View.VISIBLE);
                                 })
-                                .addOnFailureListener(e ->
-                                        Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_SHORT).show());
+                                .addOnFailureListener(e -> Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_SHORT).show());
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -196,6 +229,10 @@ public class ProfileFragment extends Fragment {
                 });
     }
 
+    /**
+     * Shows a dialog to allow the user to choose between selecting a profile picture from the gallery
+     * or taking a new picture with the camera.
+     */
     private void showImagePickerDialog() {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Select Profile Picture")
@@ -205,16 +242,29 @@ public class ProfileFragment extends Fragment {
                 }).show();
     }
 
+    /**
+     * Opens the gallery to allow the user to pick a profile image.
+     */
     private void pickImageFromGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         startActivityForResult(intent, REQUEST_IMAGE_GALLERY);
     }
 
+    /**
+     * Opens the camera to allow the user to capture a profile image.
+     */
     private void captureImageFromCamera() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         startActivityForResult(intent, REQUEST_IMAGE_CAMERA);
     }
 
+    /**
+     * Handles the result of image picking or camera capture.
+     *
+     * @param requestCode The request code that identifies the action.
+     * @param resultCode The result code indicating the outcome of the activity.
+     * @param data The intent data containing the result.
+     */
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -256,5 +306,4 @@ public class ProfileFragment extends Fragment {
             }
         }
     }
-
 }

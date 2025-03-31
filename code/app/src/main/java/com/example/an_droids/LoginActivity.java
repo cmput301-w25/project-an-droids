@@ -12,12 +12,31 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+/**
+ * LoginActivity handles user authentication via Firebase Authentication.
+ * Users can log in using their email and password, and if they are already logged in,
+ * they are redirected to the main activity.
+ */
 public class LoginActivity extends AppCompatActivity {
+    /** Input field for email and password */
     private EditText emailInput, passwordInput;
+
+    /** Button to initiate login process. */
     private Button loginButton;
+
+    /** Link to navigate to the signup screen. */
     private TextView signupLink;
+
+    /** Firebase Authentication instance. */
     private FirebaseAuth mAuth;
 
+    /**
+     * Called when the activity is first created. Initializes Firebase authentication,
+     * checks if a user is already logged in, and sets up UI elements and event listeners.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     * previously being shut down, this contains the most recent data.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

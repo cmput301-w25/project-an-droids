@@ -19,12 +19,23 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+/**
+ * Custom ArrayAdapter for displaying Mood objects in a ListView.
+ * Handles view inflation, data binding, and user interactions such as viewing details and commenting.
+ */
 public class MoodArrayAdapter extends ArrayAdapter<Mood> {
     private final ArrayList<Mood> moods;
     private final Context context;
     private final String ownerId;
     private final Map<String, String> userCache = new HashMap<>();
 
+    /**
+     * Constructs a MoodArrayAdapter with an owner ID.
+     *
+     * @param context The application context.
+     * @param moods   The list of moods to display.
+     * @param ownerId The ID of the owner of the moods (can be null).
+     */
     public MoodArrayAdapter(Context context, ArrayList<Mood> moods, String ownerId) {
         super(context, 0, moods);
         this.moods = moods;
@@ -32,10 +43,24 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         this.ownerId = ownerId;
     }
 
+    /**
+     * Constructs a MoodArrayAdapter without an owner ID.
+     *
+     * @param context The application context.
+     * @param moods   The list of moods to display.
+     */
     public MoodArrayAdapter(Context context, ArrayList<Mood> moods) {
         this(context, moods, null);
     }
 
+    /**
+     * Gets the view for an individual item in the ListView.
+     *
+     * @param position    The position of the item within the adapter.
+     * @param convertView The old view to reuse, if possible.
+     * @param parent      The parent ViewGroup.
+     * @return The View corresponding to the given position.
+     */
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
@@ -93,6 +118,11 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         return view;
     }
 
+    /**
+     * Displays a dialog with detailed information about a mood.
+     *
+     * @param mood The mood to display.
+     */
     private void showDetailsDialog(Mood mood) {
         View view = LayoutInflater.from(context).inflate(R.layout.dialog_mood_details, null);
 
@@ -177,6 +207,11 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
                 .show();
     }
 
+    /**
+     * Opens a dialog allowing the user to add a comment to a given mood.
+     *
+     * @param mood The mood for which the comment is being added.
+     */
     private void openCommentDialog(Mood mood) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle("Add Comment");
@@ -195,6 +230,12 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         builder.show();
     }
 
+    /**
+     * Adds a comment to a given mood and stores it in Firestore.
+     *
+     * @param mood The mood to which the comment is being added.
+     * @param commentText The content of the comment.
+     */
     private void addComment(Mood mood, String commentText) {
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
@@ -225,6 +266,11 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
                 });
     }
 
+    /**
+     * Opens a dialog displaying all comments associated with a given mood.
+     *
+     * @param mood The mood whose comments should be displayed.
+     */
     private void openViewCommentsDialog(Mood mood) {
         FirebaseFirestore.getInstance()
                 .collection("MoodComments")
@@ -255,6 +301,11 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
                         Toast.makeText(context, "Failed to load comments: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Opens a dialog displaying all comments associated with a given mood.
+     *
+     * @param mood The mood whose comments should be displayed.
+     */
     private void loadUsername(String userId, TextView targetView) {
         if (userId == null || userId.isEmpty()) {
             targetView.setText("👤 Unknown");

@@ -12,27 +12,58 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
+/**
+ * Provides functionality to manage mood data within Firebase Firestore.
+ * Handles adding, updating, deleting, and retrieving mood data, as well as applying filters on the data.
+ */
 public class MoodProvider {
     private final ArrayList<Mood> moods;
     private final CollectionReference moodCollection;
     private final String userId;
     private DataStatus listener;
 
+    /**
+     * Constructs a new instance of MoodProvider.
+     *
+     * @param firestore The Firebase Firestore instance.
+     * @param userId    The ID of the user to manage moods for.
+     */
     public MoodProvider(FirebaseFirestore firestore, String userId) {
         this.userId = userId;
         this.moods = new ArrayList<>();
         this.moodCollection = firestore.collection("Users").document(userId).collection("Moods");
     }
 
+    /**
+     * Interface to provide status updates for data loading and error handling.
+     */
     public interface DataStatus {
+        /**
+         * Called when the mood data is updated.
+         */
         void onDataUpdated();
+        /**
+         * Called when there is an error in data handling.
+         *
+         * @param error The error message.
+         */
         void onError(String error);
     }
 
+    /**
+     * Returns the list of moods.
+     *
+     * @return The list of moods.
+     */
     public ArrayList<Mood> getMoods() {
         return moods;
     }
 
+    /**
+     * Starts listening for updates to the mood collection.
+     *
+     * @param status The listener to handle data updates or errors.
+     */
     public void listenForUpdates(DataStatus status) {
         this.listener = status;
         moodCollection.addSnapshotListener((snapshot, error) -> {
@@ -53,6 +84,12 @@ public class MoodProvider {
         });
     }
 
+    /**
+     * Adds a new mood.
+     *
+     * @param mood   The mood to add.
+     * @param userId The ID of the user adding the mood.
+     */
     public void addMood(Mood mood, String userId) {
         DocumentReference docRef = moodCollection.document();
         mood.setId(docRef.getId());
@@ -66,6 +103,11 @@ public class MoodProvider {
         }
     }
 
+    /**
+     * Updates an existing mood.
+     *
+     * @param mood The mood to update.
+     */
     public void updateMood(Mood mood) {
         DocumentReference docRef = moodCollection.document(mood.getId());
 
@@ -76,6 +118,11 @@ public class MoodProvider {
         }
     }
 
+    /**
+     * Deletes an existing mood.
+     *
+     * @param mood The mood to delete.
+     */
     public void deleteMood(Mood mood) {
         moodCollection.document(mood.getId())
                 .delete()
@@ -83,11 +130,21 @@ public class MoodProvider {
                 .addOnFailureListener(e -> Log.e("MoodProvider", "Error deleting mood", e));
     }
 
+    /**
+     * Validates a mood before adding or updating it.
+     *
+     * @param mood    The mood to validate.
+     * @param docRef  The document reference to check against.
+     * @return {@code true} if the mood is valid, {@code false} otherwise.
+     */
     private boolean validMood(Mood mood, DocumentReference docRef) {
         return mood.getId() != null && mood.getId().equals(docRef.getId())
                 && mood.getPrivacy() != null && mood.getReason() != null && !mood.getReason().isEmpty();
     }
 
+    /**
+     * Loads all moods from Firestore.
+     */
     public void loadAllMoods() {
         moodCollection.get().addOnSuccessListener(querySnapshot -> {
             moods.clear();
@@ -101,6 +158,9 @@ public class MoodProvider {
         });
     }
 
+    /**
+     * Filters the moods to include only those from the past week.
+     */
     public void filterByRecentWeek() {
         Date oneWeekAgo = new Date(System.currentTimeMillis() - (7L * 24 * 60 * 60 * 1000));
         moodCollection.whereGreaterThan("timestamp", oneWeekAgo)
@@ -118,6 +178,11 @@ public class MoodProvider {
                 });
     }
 
+    /**
+     * Filters the moods by a specific emotion.
+     *
+     * @param emotion The emotion to filter by.
+     */
     public void filterByEmotion(String emotion) {
         moodCollection.whereEqualTo("emotion", emotion)
                 .get()
@@ -134,6 +199,11 @@ public class MoodProvider {
                 });
     }
 
+    /**
+     * Filters the moods by a keyword present in the reason.
+     *
+     * @param keyword The keyword to search for in the reason.
+     */
     public void filterByReasonContains(String keyword) {
         moodCollection.get().addOnSuccessListener(snapshot -> {
             moods.clear();
@@ -150,6 +220,11 @@ public class MoodProvider {
         });
     }
 
+    /**
+     * Loads the public moods of a target user.
+     *
+     * @param targetUserId The ID of the target user.
+     */
     public void loadPublicMoods(String targetUserId) {
         FirebaseFirestore.getInstance()
                 .collection("Users")
@@ -170,6 +245,11 @@ public class MoodProvider {
                 });
     }
 
+    /**
+     * Loads moods from users the current user is following.
+     *
+     * @param followingUserIds List of user IDs that the current user is following.
+     */
     public void loadMoodsFromFollowing(List<String> followingUserIds) {
         moods.clear();
         HashSet<String> loadedMoodIds = new HashSet<>();
@@ -197,6 +277,9 @@ public class MoodProvider {
         }
     }
 
+    /**
+     * Sorts the moods by their timestamp in descending order.
+     */
     private void sortMoodsByDate() {
         moods.sort((m1, m2) -> {
             if (m1.getTimestamp() == null) return 1;

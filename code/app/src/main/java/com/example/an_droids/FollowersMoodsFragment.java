@@ -17,15 +17,47 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Fragment that displays a feed of moods posted by the user's followers.
+ */
 public class FollowersMoodsFragment extends Fragment {
+    /**
+     * ListView to display the followers' mood feed.
+     */
     private ListView followersMoodsListView;
+    /**
+     * Adapter for managing mood data within the ListView.
+     */
     private MoodArrayAdapter adapter;
+
+    /**
+     * List containing moods fetched from followers.
+     */
     private ArrayList<Mood> moodFeed;
+
+    /**
+     * Instance of Firestore for database operations.
+     */
     private FirebaseFirestore firestore;
+
+    /**
+     * Instance of FirebaseAuth for accessing the current user.
+     */
     private FirebaseAuth mAuth;
 
+    /**
+     * Default constructor for FollowersMoodsFragment.
+     */
     public FollowersMoodsFragment() {}
 
+    /**
+     * Inflates the fragment layout and initializes UI components and Firebase instances.
+     *
+     * @param inflater LayoutInflater used to inflate the layout.
+     * @param container ViewGroup that contains the fragment's UI.
+     * @param savedInstanceState Saved instance state bundle.
+     * @return The inflated view for the fragment.
+     */
     @Override
     public View onCreateView(
             @NonNull LayoutInflater inflater,
@@ -46,6 +78,10 @@ public class FollowersMoodsFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Loads moods posted by the user's followers from Firestore.
+     * Fetches the latest moods from each follower and updates the ListView.
+     */
     private void loadFollowersMoods() {
         if (mAuth.getCurrentUser() == null) return;
         String currentUserId = mAuth.getCurrentUser().getUid();

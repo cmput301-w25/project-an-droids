@@ -16,6 +16,9 @@ import com.google.firebase.firestore.*;
 
 import java.util.*;
 
+/**
+ * Fragment for displaying and filtering moods of followed users.
+ */
 public class FollowedMoodsFragment extends Fragment {
 
     private ListView listView;
@@ -29,8 +32,19 @@ public class FollowedMoodsFragment extends Fragment {
     private String userId;
     private Button filterButton;
 
+    /**
+     * Default constructor.
+     */
     public FollowedMoodsFragment() {}
 
+    /**
+     * Called to create and return the fragment's view hierarchy.
+     *
+     * @param inflater  The LayoutInflater object that can be used to inflate views.
+     * @param container The parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed.
+     * @return The root view of the fragment.
+     */
     @Override
     public View onCreateView(
             @NonNull LayoutInflater inflater,
@@ -56,6 +70,9 @@ public class FollowedMoodsFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Loads the moods of followed users from Firestore.
+     */
     private void loadFollowedMoods() {
         db.collection("Users").document(userId).get()
                 .addOnSuccessListener(documentSnapshot -> {
@@ -75,6 +92,11 @@ public class FollowedMoodsFragment extends Fragment {
                         Log.e("FollowedMoodsFragment", "Failed to load user doc", e));
     }
 
+    /**
+     * Fetches moods from the followed users' Firestore collections.
+     *
+     * @param followedUserIds List of user IDs that the current user follows.
+     */
     private void fetchMoodsFromFollowedUsers(List<String> followedUserIds) {
         followedMoods.clear();
         allMoods.clear();
@@ -117,6 +139,9 @@ public class FollowedMoodsFragment extends Fragment {
                 .addOnFailureListener(e -> Log.e("FollowedMoodsFragment", "Error fetching moods", e));
     }
 
+    /**
+     * Displays a dialog with mood filter options.
+     */
     private void showFilterOptions() {
         String[] options = {"All", "Recent Week", "By Emotion", "By Reason"};
         new AlertDialog.Builder(requireContext())
@@ -139,6 +164,9 @@ public class FollowedMoodsFragment extends Fragment {
                 }).show();
     }
 
+    /**
+     * Resets and loads all public moods from followed users.
+     */
     private void resetAndLoadAllMoods() {
         followedMoods.clear();
         for (Mood mood : allMoods) {
@@ -155,6 +183,9 @@ public class FollowedMoodsFragment extends Fragment {
         adapter.notifyDataSetChanged();
     }
 
+    /**
+     * Filters moods to show only those posted within the last week.
+     */
     private void filterByRecentWeek() {
         long oneWeekAgo = System.currentTimeMillis() - (7L * 24 * 60 * 60 * 1000);
         ArrayList<Mood> filtered = new ArrayList<>();
@@ -175,6 +206,9 @@ public class FollowedMoodsFragment extends Fragment {
     }
 
 
+    /**
+     * Displays a dialog for selecting a mood emotion to filter by.
+     */
     private void showEmotionFilterDialog() {
         Mood.EmotionalState[] values = Mood.EmotionalState.values();
         String[] emotionNames = new String[values.length];
@@ -187,6 +221,11 @@ public class FollowedMoodsFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * Filters moods based on the selected emotional state.
+     *
+     * @param emotion The selected emotional state to filter by.
+     */
     private void filterByEmotion(String emotion) {
         ArrayList<Mood> filtered = new ArrayList<>();
         for (Mood mood : allMoods) {
@@ -206,6 +245,9 @@ public class FollowedMoodsFragment extends Fragment {
     }
 
 
+    /**
+     * Displays a dialog to enter a keyword for filtering moods by reason.
+     */
     private void showReasonFilterDialog() {
         EditText input = new EditText(requireContext());
         input.setHint("Enter keyword");
@@ -220,6 +262,11 @@ public class FollowedMoodsFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * Filters moods that contain the specified keyword in their reason field.
+     *
+     * @param keyword The keyword to filter moods by.
+     */
     private void filterByReasonContains(String keyword) {
         ArrayList<Mood> filtered = new ArrayList<>();
         for (Mood mood : allMoods) {

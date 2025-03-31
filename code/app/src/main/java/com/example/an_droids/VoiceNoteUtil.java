@@ -11,6 +11,11 @@ import java.io.FileOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+/**
+ * Utility class for recording and playing back voice notes.
+ * Handles audio recording using {@link MediaRecorder} and playback using {@link MediaPlayer}.
+ * The recorded audio is saved as a temporary file and can be played back as a voice note.
+ */
 public class VoiceNoteUtil {
 
     private static final String TAG = "VOICE";
@@ -19,7 +24,12 @@ public class VoiceNoteUtil {
     private MediaPlayer player;
     private File outputFile;
 
-    // ===== 🎙️ RECORDING =====
+    /**
+     * Starts recording a voice note. The audio is recorded and saved as a temporary file.
+     *
+     * @param context The application context.
+     * @throws IOException If there is an error preparing or starting the recording.
+     */
     public void startRecording(Context context) throws IOException {
         stopPlayback();
 
@@ -38,6 +48,12 @@ public class VoiceNoteUtil {
         Log.d(TAG, "Recording started: " + outputFile.getAbsolutePath());
     }
 
+    /**
+     * Stops the recording and returns the recorded audio as a byte array.
+     *
+     * @return A byte array representing the recorded audio.
+     * @throws IOException If there is an error during the stopping process or file reading.
+     */
     public byte[] stopRecording() throws IOException {
         if (recorder != null) {
             recorder.stop();
@@ -55,7 +71,13 @@ public class VoiceNoteUtil {
         return audioBytes;
     }
 
-    // ===== 🔊 PLAYBACK =====
+    /**
+     * Starts playing the given audio data. The audio is written to a temporary file and played back using a {@link MediaPlayer}.
+     *
+     * @param context The application context.
+     * @param audioBytes The byte array containing the audio data to be played.
+     * @throws IOException If there is an error during the file creation or playback preparation.
+     */
     public void startPlayback(Context context, byte[] audioBytes) throws IOException {
         stopPlayback();
 
@@ -101,6 +123,9 @@ public class VoiceNoteUtil {
         Log.d(TAG, "MediaPlayer preparing...");
     }
 
+    /**
+     * Stops the audio playback if it's currently playing.
+     */
     public void stopPlayback() {
         if (player != null) {
             if (player.isPlaying()) {

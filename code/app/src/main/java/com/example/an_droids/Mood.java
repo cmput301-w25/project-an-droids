@@ -19,6 +19,11 @@ import java.net.URL;
 import java.util.Date;
 import java.util.UUID;
 
+/**
+ * Represents a Mood event with various attributes such as emotion, reason,
+ * timestamp, location, social situation, privacy settings, and multimedia attachments.
+ * It also includes functionality to fetch weather data based on location.
+ */
 public class Mood implements Serializable {
     private String id;
     private Date timestamp;
@@ -44,6 +49,9 @@ public class Mood implements Serializable {
     @Exclude
     private transient Uri voiceNoteUri;
 
+    /**
+     * Enum representing different emotional states, each with an emoji and a color code.
+     */
     public enum EmotionalState {
         Anger("😠", "#FF6666"),
         Confusion("😕", "#C19A6B"),
@@ -71,6 +79,9 @@ public class Mood implements Serializable {
         }
     }
 
+    /**
+     * Enum representing the privacy settings of a Mood event.
+     */
     public enum Privacy {
         PRIVATE,
         PUBLIC
@@ -79,9 +90,21 @@ public class Mood implements Serializable {
     private EmotionalState emotion;
     private Privacy privacy;
 
+    /**
+     * Default constructor for Mood.
+     */
     public Mood() {}
 
-    // Updated constructor: you can later set the ownerId and weather via setters
+    /**
+     * Constructor for Mood with provided emotion, reason, timestamp, image, social situation, and privacy setting.
+     *
+     * @param emotion         The emotional state associated with the mood.
+     * @param reason          The reason for the mood event.
+     * @param timestamp       The timestamp when the mood event was recorded.
+     * @param image           An optional image associated with the mood event.
+     * @param socialSituation The social situation at the time of the mood event.
+     * @param privacy         The privacy setting for the mood event.
+     */
     public Mood(String emotion, String reason, Date timestamp, Bitmap image, String socialSituation, Privacy privacy) {
         this.id = UUID.randomUUID().toString();
         this.timestamp = (timestamp != null) ? timestamp : new Date();
@@ -333,7 +356,10 @@ public class Mood implements Serializable {
     }
 
     /**
-     * Helper method to convert Open-Meteo weather codes into human-readable descriptions.
+     * Converts Open-Meteo weather codes into human-readable descriptions.
+     *
+     * @param code The weather code from the Open-Meteo API.
+     * @return A human-readable weather description.
      */
     private String getWeatherDescription(int code) {
         switch (code) {
