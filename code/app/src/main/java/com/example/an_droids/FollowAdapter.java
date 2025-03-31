@@ -15,15 +15,18 @@ public class FollowAdapter extends RecyclerView.Adapter<FollowAdapter.FollowView
     private List<String> usernames;
     private List<String> userIds;
     private UnfollowCallback unfollowCallback;
+    private String buttonLabel;
+
 
     public interface UnfollowCallback {
         void onUnfollow(int position);
     }
 
-    public FollowAdapter(List<String> usernames, List<String> userIds, UnfollowCallback unfollowCallback) {
+    public FollowAdapter(List<String> usernames, List<String> userIds, UnfollowCallback unfollowCallback, String buttonLabel) {
         this.usernames = usernames != null ? usernames : new ArrayList<>();
         this.userIds = userIds != null ? userIds : new ArrayList<>();
         this.unfollowCallback = unfollowCallback;
+        this.buttonLabel = buttonLabel;
     }
 
     @NonNull
@@ -36,15 +39,16 @@ public class FollowAdapter extends RecyclerView.Adapter<FollowAdapter.FollowView
     @Override
     public void onBindViewHolder(@NonNull FollowViewHolder holder, int position) {
         String username = usernames.get(position);
-        holder.usernameTextView.setText(username); // Display the username
+        holder.usernameTextView.setText(username);
+        holder.unfollowButton.setText(buttonLabel);
 
-        // Set up the Unfollow Button
         holder.unfollowButton.setOnClickListener(v -> {
             if (unfollowCallback != null) {
-                unfollowCallback.onUnfollow(position); // Trigger the unfollow action
+                unfollowCallback.onUnfollow(position);
             }
         });
     }
+
 
     @Override
     public int getItemCount() {

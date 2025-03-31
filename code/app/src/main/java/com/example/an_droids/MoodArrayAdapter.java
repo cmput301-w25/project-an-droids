@@ -23,6 +23,7 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
     private final ArrayList<Mood> moods;
     private final Context context;
     private final String ownerId;
+    private final Map<String, String> userCache = new HashMap<>();
 
     public MoodArrayAdapter(Context context, ArrayList<Mood> moods, String ownerId) {
         super(context, 0, moods);
@@ -52,9 +53,9 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         TextView socialView = view.findViewById(R.id.socialText);
         TextView privacyView = view.findViewById(R.id.privacyText);
         TextView locationView = view.findViewById(R.id.locationText);
-        // New: attempt to get the weather TextView.
         TextView weatherView = view.findViewById(R.id.weatherText);
         ImageView infoButton = view.findViewById(R.id.infoButton);
+        TextView usernameTextView = view.findViewById(R.id.usernameText);
 
         moodTitle.setText(mood.getEmotion().name() + " " + mood.getEmotionEmoji());
         reasonView.setText(mood.getReason());
@@ -87,6 +88,7 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         view.setBackgroundColor(Color.parseColor(mood.getEmotionColorHex()));
 
         infoButton.setOnClickListener(v -> showDetailsDialog(mood));
+        loadUsername(mood.getOwnerId(), usernameTextView);
 
         return view;
     }
@@ -108,11 +110,13 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         Button commentButton = view.findViewById(R.id.moodCommentButton);
         Button viewCommentsButton = view.findViewById(R.id.moodViewCommentsButton);
         Button playVoiceButton = view.findViewById(R.id.moodPlayVoiceButton);
+        TextView usernameView = view.findViewById(R.id.detailUsername);
         VoiceNoteUtil voiceUtil = new VoiceNoteUtil();
 
         emotionView.setText(mood.getEmotion().name());
         emojiView.setText(mood.getEmotionEmoji());
         reasonView.setText(mood.getReason());
+        loadUsername(mood.getOwnerId(), usernameView);
 
         Date ts = mood.getTimestamp();
         if (ts != null) {
@@ -249,5 +253,32 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(context, "Failed to load comments: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    private void loadUsername(String userId, TextView targetView) {
+        if (userId == null || userId.isEmpty()) {
+            targetView.setText("👤 Unknown");
+            return;
+        }
+
+        if (userCache.containsKey(userId)) {
+            targetView.setText("👤 " + userCache.get(userId));
+            return;
+        }
+
+        FirebaseFirestore.getInstance().collection("Users").document(userId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    String username = snapshot.getString("username");
+                    if (username != null) {
+                        userCache.put(userId, username);
+                        targetView.setText("👤 " + username);
+                    } else {
+                        targetView.setText("👤 Unknown");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    targetView.setText("👤 Error");
+                });
     }
 }

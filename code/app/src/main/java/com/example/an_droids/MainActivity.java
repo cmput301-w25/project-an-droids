@@ -1,7 +1,9 @@
 package com.example.an_droids;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -9,6 +11,7 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -35,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
         bottomNav = findViewById(R.id.bottom_navigation);
         profileIcon = findViewById(R.id.profile_icon);
 
+        loadProfilePicture();
+
         loadFragment(new FollowedMoodsFragment());
 
         bottomNav.setOnItemSelectedListener(item -> {
@@ -50,8 +55,25 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.nav_requests) {
                 selectedFragment = FollowersFragment.newInstance(userId);
             } else if (id == R.id.nav_profile) {
-                selectedFragment = ProfileFragment.newInstance(userId);
+                FirebaseFirestore.getInstance().collection("Users").document(userId)
+                        .get()
+                        .addOnSuccessListener(doc -> {
+                            String username = doc.getString("username");
+                            if (username != null) {
+                                Intent intent = new Intent(MainActivity.this, ViewUserProfile.class);
+                                intent.putExtra("username", username);
+                                startActivity(intent);
+                            } else {
+                                Toast.makeText(this, "Username not found", Toast.LENGTH_SHORT).show();
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            Toast.makeText(this, "Error loading profile", Toast.LENGTH_SHORT).show();
+                        });
+
+                return true;
             }
+
 
             if (selectedFragment != null) {
                 loadFragment(selectedFragment);
@@ -70,4 +92,23 @@ public class MainActivity extends AppCompatActivity {
                 .replace(R.id.main_fragment_container, fragment)
                 .commit();
     }
+
+    private void loadProfilePicture() {
+        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        FirebaseFirestore.getInstance().collection("Users").document(uid)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    Users user = documentSnapshot.toObject(Users.class);
+                    if (user != null && user.getProfileBitmap() != null) {
+                        profileIcon.setImageBitmap(user.getProfileBitmap());
+                    } else {
+                        profileIcon.setImageResource(R.drawable.default_profile_account_unknown_icon_black_silhouette_free_vector);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    profileIcon.setImageResource(R.drawable.default_profile_account_unknown_icon_black_silhouette_free_vector);
+                });
+    }
+
 }
