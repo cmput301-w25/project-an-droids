@@ -142,7 +142,7 @@ public class AddMoodFragment extends DialogFragment {
         }
     }
 
-    private void onSubmit() {
+    public void onSubmit() {
         String selectedEmotion = emotionSpinner.getSelectedItem().toString();
         String reasonText = reasonEditText.getText().toString().trim();
         String selectedSocialSituation = socialSituationSpinner.getSelectedItem().toString();
