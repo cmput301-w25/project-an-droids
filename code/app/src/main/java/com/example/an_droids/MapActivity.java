@@ -50,6 +50,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         moodList = (ArrayList<Mood>) getIntent().getSerializableExtra("mood_list");
 
         filterButton = findViewById(R.id.filterButton);
+        ImageView backButton = findViewById(R.id.backButton);
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -58,6 +59,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }
 
         filterButton.setOnClickListener(v -> showTopLevelFilterDialog());
+        backButton.setOnClickListener(v -> {
+            startActivity(new Intent(MapActivity.this, MainActivity.class));
+            finish();
+        });
     }
 
     @Override

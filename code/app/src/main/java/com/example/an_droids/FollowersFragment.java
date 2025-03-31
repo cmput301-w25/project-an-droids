@@ -73,7 +73,8 @@ public class FollowersFragment extends Fragment {
         followersAdapter = new FollowAdapter(
                 followerUsernames,
                 followerUserIds,
-                this::removeFollower
+                this::removeFollower,
+                "Remove"
         );
         followersRecyclerView.setAdapter(followersAdapter);
 
