@@ -13,12 +13,26 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+/**
+ * MainActivity serves as the entry point for the application after user authentication.
+ * It manages navigation between different fragments and user profile interactions.
+ */
 public class MainActivity extends AppCompatActivity {
 
+    /** User ID of the currently authenticated user. */
     private String userId;
+
+    /** Bottom navigation bar for switching between different fragments. */
     private BottomNavigationView bottomNav;
+
+    /** Profile icon used for navigating to the profile screen. */
     private ImageView profileIcon;
 
+    /**
+     * Initializes the activity, checks for authentication, and sets up UI components.
+     *
+     * @param savedInstanceState The saved instance state from a previous instance of this activity.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -87,12 +101,21 @@ public class MainActivity extends AppCompatActivity {
                 loadFragment(ProfileFragment.newInstance(userId)));
     }
 
+    /**
+     * Loads the specified fragment into the main fragment container.
+     *
+     * @param fragment The fragment to be displayed.
+     */
     private void loadFragment(Fragment fragment) {
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.main_fragment_container, fragment)
                 .commit();
     }
 
+    /**
+     * Loads the profile picture of the currently authenticated user.
+     * If no profile picture is available, a default image is used.
+     */
     private void loadProfilePicture() {
         String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
