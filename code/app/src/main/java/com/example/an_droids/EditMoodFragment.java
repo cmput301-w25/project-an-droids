@@ -53,6 +53,12 @@ public class EditMoodFragment extends DialogFragment {
     private VoiceNoteUtil voiceUtil = new VoiceNoteUtil();
     private byte[] voiceNoteBytes = null;
 
+    /**
+     * Creates a new instance of EditMoodFragment with the given mood.
+     *
+     * @param mood the mood to be edited
+     * @return a new instance of EditMoodFragment
+     */
     public static EditMoodFragment newInstance(Mood mood) {
         EditMoodFragment fragment = new EditMoodFragment();
         Bundle args = new Bundle();
@@ -61,10 +67,22 @@ public class EditMoodFragment extends DialogFragment {
         return fragment;
     }
 
+    /**
+     * Sets the listener for mood editing events.
+     *
+     * @param listener the MoodDialogListener to handle mood edits
+     */
     public void setListener(MoodDialogListener listener) {
         this.listener = listener;
     }
 
+    /**
+     * Creates and returns the dialog for editing a mood entry.
+     * Initializes UI components, restores previous values, and sets up listeners.
+     *
+     * @param savedInstanceState the previously saved instance state
+     * @return the created dialog
+     */
     @NonNull
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
@@ -203,6 +221,9 @@ public class EditMoodFragment extends DialogFragment {
                 .create();
     }
 
+    /**
+     * Displays a date picker dialog and updates the selected date.
+     */
     private void showDatePickerDialog() {
         int year = calendar.get(Calendar.YEAR);
         int month = calendar.get(Calendar.MONTH);
@@ -215,6 +236,9 @@ public class EditMoodFragment extends DialogFragment {
         }, year, month, day).show();
     }
 
+    /**
+     * Displays a time picker dialog and updates the selected time.
+     */
     private void showTimePickerDialog() {
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
         int minute = calendar.get(Calendar.MINUTE);
@@ -225,6 +249,9 @@ public class EditMoodFragment extends DialogFragment {
         }, hour, minute, true).show();
     }
 
+    /**
+     * Displays a dialog for selecting an image source (gallery or camera).
+     */
     private void showImagePickerDialog() {
         new AlertDialog.Builder(getContext())
                 .setTitle("Select Image")
@@ -235,16 +262,32 @@ public class EditMoodFragment extends DialogFragment {
                         }).show();
     }
 
+    /**
+     * Opens the gallery to select an image.
+     * Starts an activity for result to retrieve the selected image.
+     */
     private void pickImageFromGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         startActivityForResult(intent, REQUEST_IMAGE_GALLERY);
     }
 
+    /**
+     * Opens the camera to capture an image.
+     * Starts an activity for result to retrieve the captured image.
+     */
     private void captureImageFromCamera() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         startActivityForResult(intent, REQUEST_IMAGE_CAMERA);
     }
 
+    /**
+     * Handles the result from gallery or camera selection.
+     * Updates the image view with the selected or captured image.
+     *
+     * @param requestCode the request code indicating the source
+     * @param resultCode  the result code indicating success or failure
+     * @param data        the returned intent data containing the image
+     */
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -267,6 +310,12 @@ public class EditMoodFragment extends DialogFragment {
         }
     }
 
+    /**
+     * Sets the selection of a spinner based on the given value.
+     *
+     * @param spinner       the spinner to update
+     * @param valueToSelect the value to be selected in the spinner
+     */
     private void setSpinnerSelection(Spinner spinner, String valueToSelect) {
         for (int i = 0; i < spinner.getAdapter().getCount(); i++) {
             String item = spinner.getAdapter().getItem(i).toString();
@@ -277,6 +326,12 @@ public class EditMoodFragment extends DialogFragment {
         }
     }
 
+    /**
+     * Capitalizes the first letter of the given string and converts the rest to lowercase.
+     *
+     * @param text the string to capitalize
+     * @return the capitalized string
+     */
     private String capitalize(String text) {
         return text.substring(0, 1).toUpperCase(Locale.ROOT) + text.substring(1).toLowerCase(Locale.ROOT);
     }
