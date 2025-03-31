@@ -38,6 +38,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * A dialog fragment that allows users to add a mood entry with optional image, voice note, and location.
+ */
 public class AddMoodFragment extends DialogFragment {
 
     private MoodDialogListener listener;
@@ -54,10 +57,22 @@ public class AddMoodFragment extends DialogFragment {
     private VoiceNoteUtil voiceUtil = new VoiceNoteUtil();
     private byte[] voiceNoteBytes = null;
 
+    /**
+     * Sets the listener to handle the mood submission.
+     *
+     * @param listener the MoodDialogListener instance
+     */
     public void setListener(MoodDialogListener listener) {
         this.listener = listener;
     }
 
+    /**
+     * Creates the dialog for adding a mood entry.
+     * Initializes UI components and sets up click listeners.
+     *
+     * @param savedInstanceState the previously saved instance state
+     * @return the created dialog
+     */
     @NonNull
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
@@ -125,6 +140,10 @@ public class AddMoodFragment extends DialogFragment {
                 .setPositiveButton("Add", (dialog, which) -> onSubmit())
                 .create();
     }
+    /**
+     * Called when the fragment starts.
+     * Updates the color of the dialog's positive and negative buttons.
+     */
     @Override
     public void onStart() {
         super.onStart();
@@ -142,6 +161,9 @@ public class AddMoodFragment extends DialogFragment {
         }
     }
 
+    /**
+     * Handles mood submission by creating a Mood object and passing it to the listener.
+     */
     public void onSubmit() {
         String selectedEmotion = emotionSpinner.getSelectedItem().toString();
         String reasonText = reasonEditText.getText().toString().trim();
@@ -206,6 +228,9 @@ public class AddMoodFragment extends DialogFragment {
         }
     }
 
+    /**
+     * Fetches the user's current location and updates the UI.
+     */
     private void fetchLocation() {
         FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
 
@@ -292,6 +317,9 @@ public class AddMoodFragment extends DialogFragment {
         }, 3000); // wait 3 seconds for the API call to complete
     }
 
+    /**
+     * Displays a dialog for selecting an image source (gallery or camera).
+     */
     private void showImagePickerDialog() {
         new AlertDialog.Builder(getContext())
                 .setTitle("Select Image")
@@ -301,16 +329,32 @@ public class AddMoodFragment extends DialogFragment {
                 }).show();
     }
 
+    /**
+     * Opens the gallery to select an image.
+     * Starts an activity for result to retrieve the selected image.
+     */
     private void pickImageFromGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         startActivityForResult(intent, REQUEST_IMAGE_GALLERY);
     }
 
+    /**
+     * Opens the camera to capture an image.
+     * Starts an activity for result to retrieve the captured image.
+     */
     private void captureImageFromCamera() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         startActivityForResult(intent, REQUEST_IMAGE_CAMERA);
     }
 
+    /**
+     * Handles the result from gallery or camera selection.
+     * Updates the image view with the selected or captured image.
+     *
+     * @param requestCode the request code indicating the source
+     * @param resultCode  the result code indicating success or failure
+     * @param data        the returned intent data containing the image
+     */
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
