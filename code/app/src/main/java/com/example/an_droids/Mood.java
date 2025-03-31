@@ -6,8 +6,16 @@ import android.net.Uri;
 
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.Exclude;
+
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Date;
 import java.util.UUID;
 
@@ -22,9 +30,13 @@ public class Mood implements Serializable {
     // NEW: add ownerId field that will be saved to Firestore
     private String ownerId;
 
+    // NEW: add weather field to store current weather information
+    private String weather;
+
     public static final String[] SOCIAL_SITUATIONS = {
             "No Selection", "Alone", "With one other person", "With two to several people", "With a crowd"
     };
+
     private double latitude;
     private double longitude;
     private String address;
@@ -69,7 +81,7 @@ public class Mood implements Serializable {
 
     public Mood() {}
 
-    // Updated constructor: you can later set the ownerId via setter
+    // Updated constructor: you can later set the ownerId and weather via setters
     public Mood(String emotion, String reason, Date timestamp, Bitmap image, String socialSituation, Privacy privacy) {
         this.id = UUID.randomUUID().toString();
         this.timestamp = (timestamp != null) ? timestamp : new Date();
@@ -78,6 +90,8 @@ public class Mood implements Serializable {
         this.socialSituation = socialSituation;
         this.privacy = privacy;
         setImage(image);
+        // Optionally update weather here if location is already set.
+        // updateWeather();
     }
 
     public Mood(String emotion, String reason, Date timestamp, String socialSituation, Privacy privacy) {
@@ -184,6 +198,8 @@ public class Mood implements Serializable {
 
     public void setLatitude(double latitude) {
         this.latitude = latitude;
+        // Update weather based on new location.
+        updateWeather();
     }
 
     public double getLongitude() {
@@ -192,6 +208,8 @@ public class Mood implements Serializable {
 
     public void setLongitude(double longitude) {
         this.longitude = longitude;
+        // Update weather based on new location.
+        updateWeather();
     }
 
     public String getAddress() {
@@ -241,6 +259,142 @@ public class Mood implements Serializable {
                 return "👥 Crowd";
             default:
                 return "❔ No selection";
+        }
+    }
+
+    // NEW: Weather field getters and setters
+    public String getWeather() {
+        return weather;
+    }
+
+    public void setWeather(String weather) {
+        this.weather = weather;
+    }
+
+    /**
+     * Extracts the current weather for the Mood's location using the free Open-Meteo API.
+     * This method runs on a background thread and updates the weather field based on the response.
+     */
+    public void updateWeather() {
+        // Check if the location is valid.
+        if (latitude == 0 && longitude == 0) {
+            this.weather = "Unknown";
+            return;
+        }
+
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            try {
+                // Open-Meteo free API endpoint; no API key required.
+                String urlString = "https://api.open-meteo.com/v1/forecast?latitude="
+                        + latitude + "&longitude=" + longitude + "&current_weather=true";
+                URL url = new URL(urlString);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(5000);
+                connection.setReadTimeout(5000);
+
+                int responseCode = connection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    InputStream is = connection.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                    reader.close();
+
+                    JSONObject jsonObject = new JSONObject(response.toString());
+                    if (jsonObject.has("current_weather")) {
+                        JSONObject currentWeather = jsonObject.getJSONObject("current_weather");
+                        // Extract weathercode and temperature.
+                        int weatherCode = currentWeather.getInt("weathercode");
+                        double temperature = currentWeather.getDouble("temperature");
+
+                        String weatherDescription = getWeatherDescription(weatherCode);
+                        // For example: "Clear sky, 15°C"
+                        this.weather = weatherDescription + ", " + temperature + "°C";
+                    } else {
+                        this.weather = "Unknown";
+                    }
+                } else {
+                    this.weather = "Error: " + responseCode;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                this.weather = "Error";
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
+            }
+        }).start();
+    }
+
+    /**
+     * Helper method to convert Open-Meteo weather codes into human-readable descriptions.
+     */
+    private String getWeatherDescription(int code) {
+        switch (code) {
+            case 0:
+                return "Clear sky";
+            case 1:
+                return "Mainly clear";
+            case 2:
+                return "Partly cloudy";
+            case 3:
+                return "Overcast";
+            case 45:
+                return "Fog";
+            case 48:
+                return "Depositing rime fog";
+            case 51:
+                return "Light drizzle";
+            case 53:
+                return "Moderate drizzle";
+            case 55:
+                return "Dense drizzle";
+            case 56:
+                return "Light freezing drizzle";
+            case 57:
+                return "Dense freezing drizzle";
+            case 61:
+                return "Slight rain";
+            case 63:
+                return "Moderate rain";
+            case 65:
+                return "Heavy rain";
+            case 66:
+                return "Light freezing rain";
+            case 67:
+                return "Heavy freezing rain";
+            case 71:
+                return "Slight snow fall";
+            case 73:
+                return "Moderate snow fall";
+            case 75:
+                return "Heavy snow fall";
+            case 77:
+                return "Snow grains";
+            case 80:
+                return "Slight rain showers";
+            case 81:
+                return "Moderate rain showers";
+            case 82:
+                return "Violent rain showers";
+            case 85:
+                return "Slight snow showers";
+            case 86:
+                return "Heavy snow showers";
+            case 95:
+                return "Thunderstorm";
+            case 96:
+                return "Thunderstorm with slight hail";
+            case 99:
+                return "Thunderstorm with heavy hail";
+            default:
+                return "Unknown weather";
         }
     }
 }

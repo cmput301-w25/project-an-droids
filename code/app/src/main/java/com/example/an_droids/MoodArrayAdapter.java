@@ -51,8 +51,10 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         TextView reasonView = view.findViewById(R.id.reasonText);
         TextView socialView = view.findViewById(R.id.socialText);
         TextView privacyView = view.findViewById(R.id.privacyText);
-        ImageView infoButton = view.findViewById(R.id.infoButton);
         TextView locationView = view.findViewById(R.id.locationText);
+        // New: attempt to get the weather TextView.
+        TextView weatherView = view.findViewById(R.id.weatherText);
+        ImageView infoButton = view.findViewById(R.id.infoButton);
 
         moodTitle.setText(mood.getEmotion().name() + " " + mood.getEmotionEmoji());
         reasonView.setText(mood.getReason());
@@ -72,6 +74,14 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
                         ? "📍 " + mood.getAddress()
                         : "📍 Not available"
         );
+        // Check if the weather view exists before setting its text.
+        if (weatherView != null) {
+            if (mood.getWeather() != null && !mood.getWeather().isEmpty()) {
+                weatherView.setText("Weather: " + mood.getWeather());
+            } else {
+                weatherView.setText("Weather: Unavailable");
+            }
+        }
         socialView.setText(mood.getSocialSituationEmojiLabel());
         privacyView.setText(mood.getPrivacy() == Mood.Privacy.PRIVATE ? "🔒 Private" : "🌍 Public");
         view.setBackgroundColor(Color.parseColor(mood.getEmotionColorHex()));
@@ -93,6 +103,8 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
         TextView socialView = view.findViewById(R.id.detailSocial);
         TextView privacyView = view.findViewById(R.id.detailPrivacy);
         TextView locationView = view.findViewById(R.id.detailLocation);
+        // New: display detailed weather information.
+        TextView weatherDetailView = view.findViewById(R.id.detailWeather);
         Button commentButton = view.findViewById(R.id.moodCommentButton);
         Button viewCommentsButton = view.findViewById(R.id.moodViewCommentsButton);
         Button playVoiceButton = view.findViewById(R.id.moodPlayVoiceButton);
@@ -117,6 +129,15 @@ public class MoodArrayAdapter extends ArrayAdapter<Mood> {
             locationView.setText("Location: 📍 " + mood.getAddress());
         } else {
             locationView.setText("Location: 📍 Not available");
+        }
+
+        // Set detailed weather information.
+        if (weatherDetailView != null) {
+            if (mood.getWeather() != null && !mood.getWeather().isEmpty()) {
+                weatherDetailView.setText("Weather: " + mood.getWeather());
+            } else {
+                weatherDetailView.setText("Weather: Unavailable");
+            }
         }
 
         if (mood.getImage() != null) {
